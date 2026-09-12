@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}#{{ item.id }} を編集 · {{ ws.name }}{% endblock %}
+{% block nav %}<a class="btn" href="/w/{{ ws.slug }}/items/{{ item.id }}">← 詳細へ</a>{% endblock %}
+{% block content %}
+{% include "_edit.html" %}
+{% endblock %}

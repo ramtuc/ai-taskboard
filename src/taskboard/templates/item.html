@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}#{{ item.id }} {{ item.title }} · {{ ws.name }}{% endblock %}
+{% block nav %}<a class="btn" href="/w/{{ ws.slug }}">← {{ ws.name }} のボード</a>{% endblock %}
+{% block content %}
+{% include "_detail.html" %}
+{% endblock %}

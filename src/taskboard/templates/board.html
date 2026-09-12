@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ ws.name }} · AI Taskboard{% endblock %}
+{% block nav %}
+<a class="btn" href="/">← ワークスペース</a>
+<a class="btn" href="/w/{{ ws.slug }}/settings">設定</a>
+{% endblock %}
+{% block content %}
+<div class="board-head">
+  <h1>{{ ws.name }} <span class="policy policy-{{ ws.ai_policy }}">{{ AI_POLICY_LABELS[ws.ai_policy] }}</span></h1>
+  <div class="view-switch" role="group" aria-label="表示切替">
+    <a id="view-kanban" class="btn {% if view == 'kanban' %}active{% endif %}" href="/w/{{ ws.slug }}">かんばん</a>
+    <a id="view-list" class="btn {% if view == 'list' %}active{% endif %}" href="/w/{{ ws.slug }}?view=list">リスト</a>
+  </div>
+</div>
+
+<form id="quick-add" class="quick-add" hx-post="/w/{{ ws.slug }}/items" hx-target="#board" hx-swap="outerHTML" hx-include="#filters [name]:not([name=status]), #status-filter"
+      hx-on::after-request="if(event.detail.successful) this.reset()" method="post" action="/w/{{ ws.slug }}/items">
+  <input name="title" placeholder="クイック追加: タイトルだけで候補に入れる" required maxlength="200" autocomplete="off">
+  <button type="submit" class="btn primary">追加</button>
+</form>
+
+<form id="filters" class="filters" hx-get="/w/{{ ws.slug }}" hx-target="#board" hx-swap="outerHTML" hx-trigger="change, submit" hx-push-url="true" method="get" action="/w/{{ ws.slug }}">
+  <input type="hidden" name="view" value="{{ view }}">
+  {% if view == 'list' %}
+  <select name="status" aria-label="状態">
+    <option value="">状態: すべて</option>
+    {% for s in STATUSES %}<option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ STATUS_LABELS[s] }}</option>{% endfor %}
+  </select>
+  <input type="hidden" name="sort" value="{{ filters.sort }}">
+  {% endif %}
+  <select name="tag" aria-label="タグ">
+    <option value="">タグ: すべて</option>
+    {% for t in tags %}<option value="{{ t }}" {% if filters.tag == t %}selected{% endif %}>{{ t }}</option>{% endfor %}
+  </select>
+  <select name="owner" aria-label="担当">
+    <option value="">担当: すべて</option>
+    <option value="none" {% if filters.owner == 'none' %}selected{% endif %}>（未割当）</option>
+    {% for o in owners %}<option value="{{ o }}" {% if filters.owner == o %}selected{% endif %}>{{ o }}</option>{% endfor %}
+  </select>
+  <input name="q" value="{{ filters.q or '' }}" placeholder="検索（タイトル・本文）" aria-label="検索">
+  <button type="submit" class="btn">絞り込む</button>
+  {% if filters.tag or filters.owner or filters.q or filters.status %}<a class="btn" href="/w/{{ ws.slug }}{% if view == 'list' %}?view=list{% endif %}">× 解除</a>{% endif %}
+</form>
+
+{% include "_board.html" %}
+{% endblock %}

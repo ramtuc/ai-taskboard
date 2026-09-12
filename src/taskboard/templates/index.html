@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}ワークスペース · AI Taskboard{% endblock %}
+{% block nav %}<a class="btn" href="/workspaces/new">+ ワークスペース</a>{% endblock %}
+{% block content %}
+<h1>ワークスペース</h1>
+<div class="cards">
+  {% for c in cards %}
+  <a class="ws-card" href="/w/{{ c.ws.slug }}">
+    <div class="ws-head">
+      <span class="ws-name">{{ c.ws.name }}</span>
+      <span class="policy policy-{{ c.ws.ai_policy }}">{{ AI_POLICY_LABELS[c.ws.ai_policy] }}</span>
+    </div>
+    <div class="ws-slug">/w/{{ c.ws.slug }}</div>
+    {% if c.ws.description %}<p class="ws-desc">{{ c.ws.description }}</p>{% endif %}
+    <table class="counts">
+      <tr><td>候補</td><td>{{ c.counts.candidate }}</td><td>着手</td><td>{{ c.counts.doing }}</td></tr>
+      <tr><td>待ち 人/AI</td><td>{{ c.counts.waiting_human }}/{{ c.counts.waiting_ai }}</td><td>完了</td><td>{{ c.counts.done }}</td></tr>
+      <tr><td>保留</td><td>{{ c.counts.hold }}</td><td>最終更新</td><td>{{ c.last | local_date or '-' }}</td></tr>
+    </table>
+  </a>
+  {% else %}
+  <p>ワークスペースがありません。</p>
+  {% endfor %}
+</div>
+{% if archived %}
+<details class="archived"><summary>アーカイブ済み（{{ archived | length }}）</summary>
+  <ul>{% for w in archived %}<li><a href="/w/{{ w.slug }}">{{ w.name }}</a> <small>/w/{{ w.slug }}</small></li>{% endfor %}</ul>
+</details>
+{% endif %}
+{% endblock %}

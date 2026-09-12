@@ -1,0 +1,17 @@
+# runtime data (DB, backups, imports) — never commit
+data/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+# python
+.venv/
+__pycache__/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+# spike scratch
+spike/.venv/
+spike/.pytest_cache/
+spike/__pycache__/

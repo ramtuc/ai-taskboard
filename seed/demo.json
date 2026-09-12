@@ -1,0 +1,287 @@
+{
+  "format": "taskboard-import",
+  "version": 1,
+  "_comment": "ダミーデータ一式（SPEC §8-0）。ワークスペース・項目・author 名・リンク先はすべて架空。実運用の項目・タスク ID・メンバー名は含めない。`status` は作成時の状態、`moves` は作成後に順に適用される状態変更（履歴を作るための取り込み拡張）。",
+  "workspaces": [
+    {"slug": "blog", "name": "ブログ", "description": "記事の候補と書きかけ", "ai_policy": "read_write"},
+    {"slug": "workshop", "name": "工作室", "description": "作りたいもの・直したいもの", "ai_policy": "read_write"},
+    {"slug": "reading", "name": "読書", "description": "積読と読み返したい本", "ai_policy": "read_only"}
+  ],
+  "items": [
+    {
+      "workspace": "blog",
+      "title": "555 タイマーの記事を書く（IC 実験室 #6）",
+      "body": "## なぜ\n\n- 前作の NE555 記事のアクセスが安定しているので、実験の続きを出したい\n- 無安定／単安定の両方を**オシロの波形付き**で\n\n## 範囲\n\n| 実験 | 使う部品 |\n|:--|:--|\n| 無安定 | 10kΩ / 100kΩ / 0.1µF |\n| 単安定 | 押しボタン / 1MΩ / 1µF |\n\n## メモ\n\n周波数の式は `1.44 / ((R1 + 2R2) * C)`。",
+      "status": "candidate",
+      "priority": "high",
+      "owner": "human",
+      "due": "2026-09-30",
+      "tags": ["ic-lab", "ne555"],
+      "links": [
+        {"kind": "article", "target": "/posts/demo-ne555-basics/", "label": "前作"},
+        {"kind": "task", "target": "t-demo0001", "label": "ドラフト執筆"}
+      ],
+      "created_by": "ai:demo-assistant",
+      "moves": [
+        {"to": "doing", "author": "ai:demo-assistant", "reason": "ドラフトを書き始める"},
+        {"to": "waiting_human", "author": "ai:demo-assistant", "reason": "オシロの波形写真 3 枚が必要"}
+      ],
+      "notes": [
+        {"author": "ai:demo-assistant", "body": "ドラフトの骨子を作成。無安定→単安定→応用（LED 点滅・ブザー）の順。"},
+        {"author": "human", "body": "写真は週末に撮る。ブレッドボードの配線をやり直してから。"}
+      ]
+    },
+    {
+      "workspace": "blog",
+      "title": "ESP32 の温度ロガーを 1 週間動かした結果をまとめる",
+      "body": "- SD カードに 1 分おきに記録した CSV を集計\n- 室温と CPU 温度の相関を折れ線で\n- 途中で 2 回ハングした原因（WDT？）を書く",
+      "status": "doing",
+      "priority": "normal",
+      "owner": "human",
+      "due": "2026-10-10",
+      "tags": ["esp32", "sensor"],
+      "links": [{"kind": "url", "target": "https://example.com/esp32-logger-notes", "label": "作業メモ（架空）"}],
+      "created_by": "human",
+      "notes": [
+        {"author": "ai:demo-assistant", "body": "集計用の pandas スクリプトを用意しました。`logger_summary.py` を見てください。"}
+      ]
+    },
+    {
+      "workspace": "blog",
+      "title": "はんだ吸い取り器のレビュー（手動ポンプ 3 種の比較）",
+      "body": "- 手持ちの 3 本を同じ基板で比較\n- 結論を先に: **先端の耐熱シリコンが劣化しにくいもの**が長持ち\n- 写真: 先端の拡大・吸い取り後の基板",
+      "status": "candidate",
+      "priority": "normal",
+      "owner": null,
+      "due": null,
+      "tags": ["pc-setup", "tools"],
+      "links": [],
+      "created_by": "ai:demo-assistant",
+      "notes": [
+        {"author": "ai:demo-assistant", "body": "工具レビューは実機写真が要るので、撮影日を決めてから着手に動かしてください。"}
+      ]
+    },
+    {
+      "workspace": "blog",
+      "title": "トランジスタ増幅の実験を撮り直す",
+      "body": "前回の動画がピンボケだったので、三脚を使って撮り直し。エミッタ接地の入出力波形を同時に映す。",
+      "status": "candidate",
+      "priority": "low",
+      "owner": "human",
+      "due": "2026-09-05",
+      "tags": ["video", "transistor"],
+      "links": [],
+      "created_by": "human",
+      "moves": [
+        {"to": "waiting_ai", "author": "human", "reason": "撮影の手順書をまとめてほしい"}
+      ],
+      "notes": [
+        {"author": "ai:demo-assistant", "body": "撮影手順書（照明・三脚の高さ・オシロのレンジ）を本文に追記できます。承認をください。"}
+      ]
+    },
+    {
+      "workspace": "blog",
+      "title": "古い記事のアフィリエイトリンク切れをチェックする",
+      "body": "2024 年以前の記事 40 本を対象に、リンク先が 404 になっていないか確認。",
+      "status": "candidate",
+      "priority": "normal",
+      "owner": "ai:demo-assistant",
+      "due": null,
+      "tags": ["maintenance"],
+      "links": [],
+      "created_by": "ai:demo-assistant",
+      "moves": [
+        {"to": "doing", "author": "ai:demo-assistant", "reason": "チェックスクリプトを実行"},
+        {"to": "done", "author": "ai:demo-assistant", "reason": "40 本中 3 本を修正"}
+      ],
+      "notes": [
+        {"author": "ai:demo-assistant", "body": "結果: 40 本中 3 本でリンク切れ。差し替え候補を各記事のノートに残しました。"}
+      ]
+    },
+    {
+      "workspace": "blog",
+      "title": "季節ネタ: 夏休みの電子工作特集（来年用）",
+      "body": "",
+      "status": "hold",
+      "priority": "low",
+      "owner": null,
+      "due": null,
+      "tags": ["idea"],
+      "links": [],
+      "created_by": "human"
+    },
+    {
+      "workspace": "workshop",
+      "title": "作業机の LED 照明を調光式に改造する",
+      "body": "- PWM 調光（555 か マイコン）\n- 電源は 12V ACアダプタを流用\n- 放熱を確認してから常設",
+      "status": "doing",
+      "priority": "normal",
+      "owner": "human",
+      "due": "2026-09-20",
+      "tags": ["led", "power"],
+      "links": [],
+      "created_by": "human",
+      "notes": [
+        {"author": "human", "body": "MOSFET は手持ちの IRLZ44N で足りそう。"}
+      ]
+    },
+    {
+      "workspace": "workshop",
+      "title": "3D プリンタのノズル交換（0.4 → 0.6mm）",
+      "body": "大きめのケースを速く出したいので 0.6mm を試す。スライサーのプロファイルも作る。",
+      "status": "candidate",
+      "priority": "normal",
+      "owner": null,
+      "due": null,
+      "tags": ["3dprinter"],
+      "links": [],
+      "created_by": "human"
+    },
+    {
+      "workspace": "workshop",
+      "title": "壊れたテスターのヒューズを交換",
+      "body": "10A レンジが反応しない。内部ヒューズ（10A/250V）を注文して交換。",
+      "status": "candidate",
+      "priority": "high",
+      "owner": "human",
+      "due": "2026-09-01",
+      "tags": ["repair", "tools"],
+      "links": [],
+      "created_by": "human",
+      "moves": [
+        {"to": "waiting_human", "author": "human", "reason": "部品待ち"}
+      ]
+    },
+    {
+      "workspace": "workshop",
+      "title": "部品棚のラベルを印刷し直す",
+      "body": "",
+      "status": "candidate",
+      "priority": "low",
+      "owner": null,
+      "due": null,
+      "tags": ["organize"],
+      "links": [],
+      "created_by": "human"
+    },
+    {
+      "workspace": "workshop",
+      "title": "電源ユニットのファンを静音タイプに交換",
+      "body": "40mm ファンがうるさい。同サイズの静音品に交換して回転数を落とす。",
+      "status": "candidate",
+      "priority": "normal",
+      "owner": "human",
+      "due": null,
+      "tags": ["repair"],
+      "links": [],
+      "created_by": "ai:demo-assistant",
+      "moves": [
+        {"to": "doing", "author": "human", "reason": ""},
+        {"to": "done", "author": "human", "reason": "交換完了・騒音は体感で半分"}
+      ],
+      "notes": [
+        {"author": "ai:demo-assistant", "body": "交換候補: 40mm/12V/静音（架空型番 QF-4010S）。コネクタが 2 ピンなので変換が要るかもしれません。"},
+        {"author": "human", "body": "コネクタはそのまま刺さった。"}
+      ]
+    },
+    {
+      "workspace": "workshop",
+      "title": "ロボットアームの試作（サーボ 4 軸）",
+      "body": "冬の長期プロジェクト。まず 3D プリント用の関節を設計するところから。",
+      "status": "hold",
+      "priority": "low",
+      "owner": null,
+      "due": null,
+      "tags": ["project", "servo"],
+      "links": [],
+      "created_by": "human"
+    },
+    {
+      "workspace": "reading",
+      "title": "積読: 定本 トランジスタ回路の設計",
+      "body": "第 3 章（エミッタ接地増幅）まで読んだ。次は差動増幅。",
+      "status": "doing",
+      "priority": "normal",
+      "owner": "human",
+      "due": null,
+      "tags": ["analog", "book"],
+      "links": [],
+      "created_by": "human",
+      "notes": [
+        {"author": "human", "body": "式を追うより先に、手元の回路で実測してから読み返すと頭に入る。"}
+      ]
+    },
+    {
+      "workspace": "reading",
+      "title": "SQLite の WAL の公式ドキュメントを読み直す",
+      "body": "2 プロセスで同じファイルを開くときの挙動（checkpoint と busy_timeout）を確認したい。",
+      "status": "candidate",
+      "priority": "high",
+      "owner": "human",
+      "due": "2026-09-15",
+      "tags": ["sqlite", "docs"],
+      "links": [{"kind": "url", "target": "https://sqlite.org/wal.html", "label": "Write-Ahead Logging"}],
+      "created_by": "ai:demo-assistant",
+      "notes": [
+        {"author": "ai:demo-assistant", "body": "要点だけ先にまとめました: WAL では読み手が書き手をブロックしない。checkpoint は既定で 1000 ページごと。"}
+      ]
+    },
+    {
+      "workspace": "reading",
+      "title": "htmx の本を通読する",
+      "body": "",
+      "status": "candidate",
+      "priority": "normal",
+      "owner": null,
+      "due": null,
+      "tags": ["web", "book"],
+      "links": [],
+      "created_by": "human"
+    },
+    {
+      "workspace": "reading",
+      "title": "MCP の仕様書を最新版で読み直す",
+      "body": "プロトコル改訂で握手（initialize）の扱いが変わったところを確認。",
+      "status": "candidate",
+      "priority": "normal",
+      "owner": "ai:demo-assistant",
+      "due": null,
+      "tags": ["mcp", "docs"],
+      "links": [{"kind": "url", "target": "https://modelcontextprotocol.io/", "label": "公式サイト"}],
+      "created_by": "human",
+      "moves": [
+        {"to": "waiting_ai", "author": "human", "reason": "変更点を要約してほしい"}
+      ]
+    },
+    {
+      "workspace": "reading",
+      "title": "読了: 電子工作のための PCB 設計入門",
+      "body": "4 層基板の章がよかった。JLCPCB の設定値のメモは工作室の項目に転記済み。",
+      "status": "candidate",
+      "priority": "normal",
+      "owner": "human",
+      "due": null,
+      "tags": ["pcb", "book"],
+      "links": [],
+      "created_by": "human",
+      "moves": [
+        {"to": "done", "author": "human", "reason": "読み終わった"}
+      ],
+      "notes": [
+        {"author": "human", "body": "手元に置いておく本。"}
+      ]
+    },
+    {
+      "workspace": "reading",
+      "title": "古い雑誌のバックナンバーを整理",
+      "body": "",
+      "status": "hold",
+      "priority": "low",
+      "owner": null,
+      "due": null,
+      "tags": ["organize"],
+      "links": [],
+      "created_by": "human"
+    }
+  ]
+}

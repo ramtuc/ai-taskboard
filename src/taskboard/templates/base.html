@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AI Taskboard{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/htmx.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">AI Taskboard</a>
+    <nav>{% block nav %}{% endblock %}</nav>
+  </header>
+  <div id="flash" class="flash" hidden></div>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="foot">ai-taskboard v{{ app_version }} · local only (127.0.0.1)</footer>
+  <script>
+    // htmx は 4xx/5xx を差し込まないので、サーバーの短いエラー文を #flash に出す（唯一の自前 JS）
+    document.body.addEventListener('htmx:responseError', function (e) {
+      var f = document.getElementById('flash');
+      f.textContent = (e.detail.xhr.status + ': ' + e.detail.xhr.responseText).slice(0, 300);
+      f.hidden = false;
+      setTimeout(function () { f.hidden = true; }, 6000);
+    });
+  </script>
+</body>
+</html>

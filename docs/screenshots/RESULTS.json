@@ -1,0 +1,67 @@
+[
+  {
+    "name": "index loads",
+    "ok": true,
+    "info": ""
+  },
+  {
+    "name": "htmx loaded",
+    "ok": true,
+    "info": ""
+  },
+  {
+    "name": "kanban has 6 columns",
+    "ok": true,
+    "info": "columns=6"
+  },
+  {
+    "name": "quick add: card appears in candidate column",
+    "ok": true,
+    "info": "count (1) -> (2)"
+  },
+  {
+    "name": "quick add: no full reload (window marker kept)",
+    "ok": true,
+    "info": ""
+  },
+  {
+    "name": "quick add: form reset after success",
+    "ok": true,
+    "info": ""
+  },
+  {
+    "name": "new card id found",
+    "ok": true,
+    "info": "id=20"
+  },
+  {
+    "name": "move via select: card now in doing column (partial update)",
+    "ok": true,
+    "info": "doing (2) -> (3)"
+  },
+  {
+    "name": "list view after clicking toggle",
+    "ok": true,
+    "info": "url=http://127.0.0.1:8765/w/blog?view=list rows=8"
+  },
+  {
+    "name": "detail link for the 555 item",
+    "ok": true,
+    "info": "/w/blog/items/1"
+  },
+  {
+    "name": "detail shows AI badges, markdown table, events",
+    "ok": true,
+    "info": "ai=6 events=6"
+  },
+  {
+    "name": "note added via htmx, markdown rendered, no reload",
+    "ok": true,
+    "info": ""
+  },
+  {
+    "name": "edit form swapped into #detail",
+    "ok": true,
+    "info": ""
+  }
+]

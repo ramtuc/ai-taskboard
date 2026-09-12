@@ -468,11 +468,14 @@ Claude Code 側の権限: ツール名は `mcp__taskboard__add_item` のよう�
 - **同じ関数を 3 つの入口から**: UI・REST・MCP が同じ service 層を呼ぶので、機能追加は 1 か所。テストも service 層に集中させる
 - **MCP チュートリアル記事の続編として自然**: 前作が「計算 3 つの MCP」、今作が「状態を持つ MCP（DB に書く）」。SDK・登録手順・エラーの流儀が同じ
 
-### 5-3. 未確定（App-Dev が着手時に決める・SPEC には方針のみ）
+### 5-3. 着手時に確定した事項（2026-09-12・App-Dev t-a324f39f。Manager 決定を反映）
 
-- Markdown レンダラ: `markdown-it-py`（MIT・`mdit-py-plugins`）か `markdown`（BSD）。**どちらでも生 HTML は無効化**し、リンクは `rel="noopener"`。一次資料で挙動を確認してから決める
-- CSS: 自前の最小 CSS（1 ファイル・200 行以内）。フレームワーク（Pico.css 等）は入れない（依存を増やさない）。ダークモードは `prefers-color-scheme` だけ対応
-- 起動コマンド名: `uv run taskboard serve` / `uv run taskboard import` / `uv run taskboard backup` / `uv run taskboard seed --demo`（`pyproject.toml` の `[project.scripts]`）
+- **Python: uv 管理の 3.12（3.12.12）で確定**（`.python-version` = 3.12・`requires-python >= 3.12`）。§0／§5-1 の「3.11」はこの決定で読み替える（本節以外は原文のまま）
+- **Markdown レンダラ: `markdown-it-py` 4.2.0（MIT）で確定**。`MarkdownIt("commonmark", {"html": False})` に table / strikethrough を有効化。生 HTML はエスケープされ、`javascript:`・`data:` 等の URL は markdown-it の既定 validateLink が落とす。リンクは `rel="noopener noreferrer"`、外部 URL は `target="_blank"`。テンプレートは Jinja2 autoescape
+- CSS: 自前の最小 CSS 1 ファイル（`static/style.css`・約 100 行）。フレームワーク無し。ダークモードは `prefers-color-scheme` のみ
+- 起動コマンド: `uv run taskboard serve` / `init-db` / `seed --demo` / `import` / `backup`（`pyproject.toml` の `[project.scripts]`）。`serve` に `--host` は用意しない（127.0.0.1 固定）
+- htmx 2.0.10 を `src/taskboard/static/htmx.min.js` に同梱（SHA-384 が htmx.org 掲載の integrity 値と一致）
+- 取り込みの任意拡張: 項目の `"moves": [{"to", "author", "reason"}]`（作成後に順に move_item。ダミー DB の履歴作りに使用）
 
 ---
 

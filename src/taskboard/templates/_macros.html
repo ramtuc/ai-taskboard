@@ -1,0 +1,30 @@
+{# 共通マクロ。author バッジは human（灰）と ai:*（青）で色分けする（SPEC §2-3 / §2-5） #}
+{% macro badge(author, compact=false) -%}
+{%- if author and author.startswith('ai:') -%}
+<span class="badge badge-ai" title="{{ author }}">{% if compact %}AI{% else %}AI · {{ author[3:] }}{% endif %}</span>
+{%- elif author -%}
+<span class="badge badge-human" title="{{ author }}">{% if compact %}H{% else %}human{% endif %}</span>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro priority(p) -%}
+<span class="pri pri-{{ p }}">{{ PRIORITY_LABELS.get(p, p) }}</span>
+{%- endmacro %}
+
+{% macro due(item) -%}
+{%- if item.due -%}<span class="due{% if item.overdue %} overdue{% endif %}" title="{{ item.due }}">期限 {{ item.due | short_date }}</span>{%- endif -%}
+{%- endmacro %}
+
+{% macro move_select(item, target, extra_class='') -%}
+<form class="move-form {{ extra_class }}" hx-post="/items/{{ item.id }}/move" hx-target="#{{ target }}" hx-swap="outerHTML" hx-include="#filters [name]:not([name=status]), #status-filter" method="post" action="/items/{{ item.id }}/move">
+  <input type="hidden" name="back" value="/w/{{ item.workspace }}{% if target == 'detail' %}/items/{{ item.id }}{% endif %}">
+  <select name="status" hx-trigger="change" hx-post="/items/{{ item.id }}/move" hx-target="#{{ target }}" hx-swap="outerHTML" hx-include="closest form, #filters [name]:not([name=status]), #status-filter" aria-label="状態を変更">
+    {% for s in STATUSES %}<option value="{{ s }}" {% if s == item.status %}selected{% endif %}>{{ STATUS_LABELS[s] }}</option>{% endfor %}
+  </select>
+  <noscript><button type="submit">移動</button></noscript>
+</form>
+{%- endmacro %}
+
+{% macro link_href(l) -%}
+{%- if l.kind == 'task' -%}#task-{{ l.target }}{%- else -%}{{ l.target }}{%- endif -%}
+{%- endmacro %}

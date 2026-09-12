@@ -1,0 +1,81 @@
+{% import "_macros.html" as ui %}
+<section id="detail" class="detail">
+  <header class="detail-head">
+    <div class="detail-title">
+      <span class="card-id">#{{ item.id }}</span>
+      <h1>{{ item.title }}</h1>
+    </div>
+    <div class="detail-actions">
+      <button class="btn" hx-get="/w/{{ ws.slug }}/items/{{ item.id }}/edit" hx-target="#detail" hx-swap="outerHTML">編集</button>
+      {{ ui.move_select(item, 'detail') }}
+      {% if item.status != 'done' %}
+      <form class="complete-form" hx-post="/items/{{ item.id }}/complete" hx-target="#detail" hx-swap="outerHTML" method="post" action="/items/{{ item.id }}/complete">
+        <input type="hidden" name="back" value="/w/{{ ws.slug }}/items/{{ item.id }}">
+        <input name="summary" placeholder="完了メモ（任意）" maxlength="4000">
+        <button type="submit" class="btn primary">完了にする</button>
+      </form>
+      {% endif %}
+    </div>
+  </header>
+
+  <dl class="meta">
+    <dt>状態</dt><dd><span class="status status-{{ item.status }}">{{ STATUS_LABELS[item.status] }}</span></dd>
+    <dt>優先度</dt><dd>{{ ui.priority(item.priority) }}</dd>
+    <dt>担当</dt><dd>{{ item.owner or '-' }}</dd>
+    <dt>期限</dt><dd>{% if item.due %}<span class="{% if item.overdue %}overdue{% endif %}">{{ item.due }}</span>{% else %}-{% endif %}</dd>
+    <dt>作成</dt><dd>{{ ui.badge(item.created_by) }} <time datetime="{{ item.created_at }}">{{ item.created_at | local_dt }}</time></dd>
+    <dt>更新</dt><dd><time datetime="{{ item.updated_at }}">{{ item.updated_at | local_dt }}</time>{% if item.completed_at %} · 完了 {{ item.completed_at | local_dt }}{% endif %}</dd>
+    <dt>タグ</dt><dd>{% for t in item.tags %}<a class="tag" href="/w/{{ ws.slug }}?tag={{ t }}">{{ t }}</a>{% else %}-{% endfor %}</dd>
+    <dt>リンク</dt><dd>
+      {% for l in item.links %}
+        <span class="link link-{{ l.kind }}">{{ l.kind }}:
+          {% if l.kind == 'task' %}<code>{{ l.target }}</code>{% else %}<a href="{{ l.target }}" rel="noopener noreferrer" {% if l.kind == 'url' %}target="_blank"{% endif %}>{{ l.target }}</a>{% endif %}
+          {% if l.label %}<small>（{{ l.label }}）</small>{% endif %}</span>
+      {% else %}-{% endfor %}
+    </dd>
+  </dl>
+
+  <section class="body">
+    <h2>本文</h2>
+    {% if item.body %}<div class="markdown">{{ item.body | markdown }}</div>{% else %}<p class="muted">（本文なし）</p>{% endif %}
+  </section>
+
+  <section class="notes">
+    <h2>ノート <span class="count">({{ notes | length }})</span></h2>
+    <ul class="note-list">
+      {% for n in notes %}
+      <li class="note{% if n.by_ai %} note-ai{% endif %}">
+        <div class="note-head">{{ ui.badge(n.author) }} <time datetime="{{ n.created_at }}">{{ n.created_at | local_dt }}</time></div>
+        <div class="markdown">{{ n.body | markdown }}</div>
+      </li>
+      {% else %}<li class="muted">まだノートはありません。</li>{% endfor %}
+    </ul>
+    <form class="note-form" hx-post="/items/{{ item.id }}/notes" hx-target="#detail" hx-swap="outerHTML" method="post" action="/items/{{ item.id }}/notes">
+      <input type="hidden" name="back" value="/w/{{ ws.slug }}/items/{{ item.id }}">
+      <textarea name="body" rows="3" placeholder="ノートを追加（Markdown 可・追記のみ）" required maxlength="4000"></textarea>
+      <button type="submit" class="btn primary">投稿</button>
+    </form>
+  </section>
+
+  <section class="history">
+    <h2>履歴 <span class="count">({{ events | length }})</span></h2>
+    <table class="events">
+      <tbody>
+      {% for e in events %}
+        <tr class="{% if e.by_ai %}ev-ai{% endif %}">
+          <td><time datetime="{{ e.created_at }}">{{ e.created_at | local_dt }}</time></td>
+          <td>{{ ui.badge(e.author) }}</td>
+          <td><code>{{ e.kind }}</code></td>
+          <td class="ev-detail">
+            {% if e.kind in ('item.moved', 'item.completed') %}{{ STATUS_LABELS.get(e.payload.get('from'), e.payload.get('from')) }} → {{ STATUS_LABELS.get(e.payload.get('to'), e.payload.get('to')) }}{% if e.payload.get('reason') %} <small>「{{ e.payload.reason }}」</small>{% endif %}
+            {% elif e.kind == 'item.updated' %}{{ e.payload.get('fields', []) | join(', ') }}
+            {% elif e.kind == 'item.created' %}{{ STATUS_LABELS.get(e.payload.get('status'), '') }}{% if e.payload.get('import_file') %} <small>（取り込み: {{ e.payload.import_file }}）</small>{% endif %}
+            {% endif %}
+            <small class="src">{{ e.source }}</small>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</section>

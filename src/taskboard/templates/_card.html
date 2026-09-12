@@ -1,0 +1,15 @@
+{% import "_macros.html" as ui %}
+<article class="card card-{{ item.status }}{% if item.created_by_ai %} card-ai{% endif %}" id="item-{{ item.id }}">
+  <div class="card-top">
+    <a class="card-id" href="/w/{{ ws.slug }}/items/{{ item.id }}">#{{ item.id }}</a>
+    {{ ui.badge(item.created_by, compact=true) }}
+    {{ ui.priority(item.priority) }}
+  </div>
+  <a class="card-title" href="/w/{{ ws.slug }}/items/{{ item.id }}" title="{{ item.title }}">{{ item.title }}</a>
+  <div class="card-meta">
+    {{ ui.due(item) }}
+    {% if item.owner %}<span class="owner">担当 {{ item.owner }}</span>{% endif %}
+    {% for t in item.tags %}<span class="tag">{{ t }}</span>{% endfor %}
+  </div>
+  {{ ui.move_select(item, 'board', 'card-move') }}
+</article>

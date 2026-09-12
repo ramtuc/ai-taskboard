@@ -1,0 +1,24 @@
+{% import "_macros.html" as ui %}
+<section id="detail" class="detail edit">
+  <h1>#{{ item.id }} を編集</h1>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <form class="form" hx-post="/w/{{ ws.slug }}/items/{{ item.id }}/edit" hx-target="#detail" hx-swap="outerHTML" method="post" action="/w/{{ ws.slug }}/items/{{ item.id }}/edit">
+    <label>タイトル <input name="title" value="{{ values.title }}" required maxlength="200"></label>
+    <label>本文（Markdown） <textarea name="body" rows="10">{{ values.body }}</textarea></label>
+    <div class="row">
+      <label>優先度
+        <select name="priority">{% for p in PRIORITIES %}<option value="{{ p }}" {% if p == values.priority %}selected{% endif %}>{{ PRIORITY_LABELS[p] }}</option>{% endfor %}</select>
+      </label>
+      <label>担当（human / ai:名前 / 空） <input name="owner" value="{{ values.owner }}" pattern="(human|ai:[a-z0-9][a-z0-9._-]{0,39})?" placeholder="human"></label>
+      <label>期限 <input name="due" type="date" value="{{ values.due }}"></label>
+    </div>
+    <label>タグ（空白区切り・英小文字） <input name="tags" value="{{ values.tags }}" placeholder="ic-lab ne555"></label>
+    <label>リンク（1 行 1 つ: <code>article /posts/xxx/ ラベル</code>・<code>task t-xxxx</code>・<code>url https://...</code>）
+      <textarea name="links" rows="3">{{ values.links }}</textarea></label>
+    <p class="muted">状態はここでは変えられません（ボードか詳細の「状態を変更」から。履歴に残すため）。</p>
+    <p>
+      <button type="submit" class="btn primary">保存</button>
+      <button type="button" class="btn" hx-get="/w/{{ ws.slug }}/items/{{ item.id }}" hx-target="#detail" hx-swap="outerHTML">キャンセル</button>
+    </p>
+  </form>
+</section>

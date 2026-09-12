@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ ws.name }} の設定 · AI Taskboard{% endblock %}
+{% block nav %}<a class="btn" href="/w/{{ ws.slug }}">← ボードへ</a>{% endblock %}
+{% block content %}
+<h1>{{ ws.name }} <small>/w/{{ ws.slug }}</small> の設定</h1>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+{% if saved %}<p class="ok">保存しました。</p>{% endif %}
+<form method="post" action="/w/{{ ws.slug }}/settings" class="form">
+  <label>名前 <input name="name" value="{{ ws.name }}" required maxlength="80"></label>
+  <label>説明 <input name="description" value="{{ ws.description }}" maxlength="200"></label>
+  <label>AI からの見え方（MCP／REST が参照。Web UI では常に見える）
+    <select name="ai_policy">
+      {% for p in AI_POLICIES %}<option value="{{ p }}" {% if p == ws.ai_policy %}selected{% endif %}>{{ AI_POLICY_LABELS[p] }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="inline"><input type="checkbox" name="archived" value="1" {% if ws.archived_at %}checked{% endif %}> アーカイブする（一覧から隠す。削除はしない）</label>
+  <p><button type="submit" class="btn primary">保存</button></p>
+</form>
+{% endblock %}
