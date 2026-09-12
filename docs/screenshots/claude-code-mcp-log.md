@@ -80,3 +80,43 @@ GET  /docs                                                → 200（OpenAPI UI�
 ```
 
 curl の実コマンド例は README「REST API」節。Git Bash の curl は日本語の `-d '…'` を cp932 で送るので、JSON は UTF-8 ファイルにして `--data-binary @file` で送る（ハーネス側の注意）。
+
+## 5. ToolError を読んで言い直す（headless `claude -p`・demo DB）
+
+2026-09-12 19:00:30 JST 実行。わざと存在しない slug `blogs` を渡し、失敗したら `list_workspaces` で正しい slug を探して 1 回だけやり直すよう指示した。**結果: 言い直して成功**（`blogs` → ToolError → `list_workspaces` → `blog` で作成、item #23）。
+
+```powershell
+PS C:\path\to\ai-taskboard> claude -p "Use ONLY the MCP tools of server 'taskboard'. Add an item titled 'ToolError テスト（デモ）' to workspace 'blogs'. If that fails, call list_workspaces to find the correct slug and retry once." --output-format json --allowedTools "mcp__taskboard__list_workspaces,mcp__taskboard__add_item" --max-turns 6
+# is_error=False  num_turns=5  duration_ms=19211 (api 20251)  total_cost_usd=0.1795  permission_denials=[]  session=dd3c9142-…
+# model: claude-opus-5 (input 10 / cache_read 114,607 / cache_creation 10,502 / output 641 tokens) ＋ haiku-4-5 少量（$0.001）
+```
+
+ツール呼び出し列（セッション transcript `~/.claude/projects/<project>/dd3c9142-….jsonl` の tool_use / tool_result をそのまま時系列で）:
+
+| # | 時刻 (UTC) | 呼び出し | 結果 |
+|:-:|:--|:--|:--|
+| 0 | 10:00:37 | `ToolSearch select:mcp__taskboard__add_item,mcp__taskboard__list_workspaces` | Claude Code 側の内部処理（遅延ロードされた MCP ツールのスキーマ取得）。サーバーには届かない |
+| 1 | 10:00:40 | `mcp__taskboard__add_item {"workspace":"blogs","title":"ToolError テスト（デモ）"}` | **is_error=true** `Error executing tool add_item: workspace 'blogs' not found` |
+| 2 | 10:00:43 | `mcp__taskboard__list_workspaces {}` | blog(read_write) / workshop(read_write) / reading(read_only) の 3 件 |
+| 3 | 10:00:47 | `mcp__taskboard__add_item {"workspace":"blog","title":"ToolError テスト（デモ）"}` | 成功: `{"id":23,"workspace":"blog","status":"candidate","created_by":"ai:demo-assistant",…,"url":"http://127.0.0.1:8765/w/blog/items/23"}` |
+| 4 | 10:00:52 | （最終応答） | 下記 |
+
+ToolError の本文はサーバーが投げた `NotFound("workspace 'blogs' not found")` を FastMCP が `Error executing tool add_item: …` に包んだもの。「代わりに list_workspaces を呼べ」という文言はエラー側には無く、サーバーの instructions（「まず list_workspaces か get_workspace_summary で状況を見てから…」）とプロンプトの指示でモデルが次の手を選んでいる。
+
+Claude の最終応答（`result` フィールドそのまま）:
+
+```
+Done.
+
+1. `add_item` on workspace `blogs` → **failed**: `workspace 'blogs' not found`
+2. `list_workspaces` → available slugs: `blog` (ブログ, read_write), `workshop` (工作室, read_write), `reading` (読書, read_only)
+3. Retried with `blog` → **succeeded**
+
+Created item:
+- **ID 23** — "ToolError テスト（デモ）"
+- workspace: `blog`, status: `candidate`, priority: `normal`
+- created_by: `ai:demo-assistant`
+- http://127.0.0.1:8765/w/blog/items/23
+```
+
+demo DB 側: `item` #23（created_by=ai:demo-assistant）と `event` #57 `item.created`（source=mcp）が 1 行ずつ増えた。失敗した 1 回目（`blogs`）は DB に何も残さない（イベントも無し）。
