@@ -1,4 +1,4 @@
-"""MCP stdio スパイク (t-6a38efa9)
+"""MCP stdio スパイク
 
 公式 MCP Python SDK v2 (パッケージ名 `mcp`, 2.2.0) の高レベル API `MCPServer`
 (v1 では `FastMCP` と呼ばれていたもの) で、メモリ上のリストに対する

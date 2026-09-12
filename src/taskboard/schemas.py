@@ -27,7 +27,7 @@ def base_url() -> str:
 
 class Link(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    kind: Annotated[LinkKind, Field(description="article=サイト内パス(/posts/...) / task=.ai-team のタスク ID (t-xxxx) / url=それ以外の URL")]
+    kind: Annotated[LinkKind, Field(description="article=サイト内パス(/posts/...) / task=外部タスク管理の ID（例: チケット番号） / url=それ以外の URL")]
     target: Annotated[str, Field(description="'/posts/xxx/' | 't-xxxx' | 'https://...'")]
     label: Annotated[str, Field(description="表示ラベル（任意）")] = ""
 

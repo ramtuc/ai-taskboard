@@ -1,23 +1,23 @@
 # AI タスクボード SPEC — 人と AI が一緒に書く「候補・残項目」ボード
 
-- 版: v0.1（設計のみ・**コード未着手**）／2026-09-12／起草: Writer-Tech（electwork-hp チーム）
-- 場所: `E:\prog\ai-taskboard\`（プロジェクト名は仮。人間が変えてよい）
-- 進め方: ロジアナ基板（`E:\prog\rp2040-logic-analyzer\SPEC.md`）と同じく **SPEC を先に固めてから実装**。実装は新設予定の開発担当メンバー（App-Dev・承認待ち）に渡すので、**他人がこの文書だけで実装できる粒度**で書く
-- 前提: 人間の要件（2026-09-12 原文の趣旨）「候補・残項目を管理整理できる Web アプリ。claude 等の AI が書き込めて、人も書き込める。ブログ／仕事などに**ページを分ける**（項目分類ではなくワークスペースごとに別ページ）。製作過程も記事にする」＋追加指示「**ブログに載せるのはダミーデータで**」
-- 本文中の ★ は人間の決定待ち（§10 に集約）。「未確認」と書いた箇所は一次資料で裏が取れていない
+- 版: v0.1（設計のみ・**コード未着手**）／2026-09-12／起草: 設計担当の AI（人間がレビュー）
+- リポジトリ: `ai-taskboard`（プロジェクト名は仮。§10-1）
+- 進め方: **SPEC を先に固めてから実装**。実装は別の担当（実装担当の AI）に渡すので、**他人がこの文書だけで実装できる粒度**で書く
+- 前提: 人間の要件「候補・残項目を管理整理できる Web アプリ。Claude 等の AI が書き込めて、人も書き込める。ブログ／仕事などに**ページを分ける**（項目分類ではなくワークスペースごとに別ページ）。製作過程も記事にする」＋追加指示「**ブログに載せるのはダミーデータで**」
+- 本文中の ★ は決定事項（§10 に集約。既定値で進めた）。「未確認」と書いた箇所は一次資料で裏が取れていない
 
 ---
 
 ## 0. 一枚要約
 
-| 観点 | 決定（Manager 既定案・人間が変えなければこれ） |
+| 観点 | 決定（既定値） |
 |:---|:---|
 | 何 | ワークスペース（＝ページ）ごとに独立した「候補・残項目」のボード。人も AI も同じ項目に書く。**誰が書いたかを全操作で残す** |
-| 誰が | 単一ユーザー（人間）＋ AI（Claude Code のチーム＝Manager／将来は Gemini 側の BlogAnalytics など） |
+| 誰が | 単一ユーザー（人間）＋ AI（MCP で繋ぐ Claude Code。将来は REST 経由の別の AI も） |
 | どこで | **ローカル専用**。既定 `127.0.0.1:8765`。LAN 公開はオプション（トークン必須） |
 | 技術 | Python 3.11 / **FastAPI** / **SQLite（1 ファイル）** / **htmx 2.x**（ビルド工程なし）/ **MCP 公式 Python SDK 2.x の `MCPServer`（旧 FastMCP）** / `uv run` で起動 |
 | AI の書き込み口 | **MCP サーバー（stdio）** を主、**同じ関数を REST（`/api/v1`）でも公開** |
-| 初期ワークスペース | 「ブログ」「仕事」「開発」（★名前は人間が決める）。URL `/w/<slug>` |
+| 初期ワークスペース | 「ブログ」「仕事」「開発」（★§10-2）。URL `/w/<slug>` |
 | 列（状態） | 候補 → 着手 → 待ち（人）／待ち（AI） → 完了／保留 の 6 状態 |
 | 機密 | ワークスペースごとに AI から見えるかを決める `ai_policy`。「仕事」は既定で **AI 非公開** |
 | 記事 | posts 2 本（MCP チュートリアル 20260903 の続編）。**スクショ・サンプルはすべてダミーデータ** |
@@ -32,23 +32,25 @@
 
 | 今の置き場 | 何が入っているか | 困りごと |
 |:---|:---|:---|
-| チャットの会話（Claude Code のセッション） | Manager が turn の最後にまとめる「残項目」 | セッションが切り替わると探せない。人間が別の場所に書き写している |
-| `.ai-team/handoffs/*.md` の「残課題」欄 | ワーカーがタスク完了時に書く残り | タスク単位に分かれていて横断できない。完了したかどうかを誰も更新しない |
-| メモリ（`project_news_followup_watch.md` 等） | 続報ウォッチ・企画のタネ | AI 側の記憶であって、人間が一覧で見る UI が無い |
+| チャットの会話（Claude Code のセッション） | 運用担当の AI がセッションの最後にまとめる「残項目」 | セッションが切り替わると探せない。人間が別の場所に書き写している |
+| 作業記録（タスクごとの完了報告）の「残課題」欄 | 各担当の AI がタスク完了時に書く残り | タスク単位に分かれていて横断できない。完了したかどうかを誰も更新しない |
+| AI 側のメモリ（続報ウォッチのメモなど） | 続報ウォッチ・企画のタネ | AI 側の記憶であって、人間が一覧で見る UI が無い |
 
-このアプリは、これらを **1 つのボード**に集める。人間はブラウザで見て書き、AI（Manager）は MCP ツールで同じ項目を読み書きする。Manager の残項目管理をここへ移す＝**ドッグフーディング**が v1 の目的。
+このアプリは、これらを **1 つのボード**に集める。人間はブラウザで見て書き、AI（運用担当）は MCP ツールで同じ項目を読み書きする。運用担当の AI の残項目管理をここへ移す＝**ドッグフーディング**が v1 の目的。
 
-### 1-2. `.ai-team/tasks.json` とは別物
+### 1-2. 既存のタスク管理との切り分け
 
-| | `.ai-team/tasks.json` | このボード |
+AI チームを回す仕組みには、ふつう「作業指示の待ち行列」（タスク管理）がすでにある。このボードはそれとは別物で、置き換えない。
+
+| | 既存のタスク管理（作業指示の待ち行列） | このボード |
 |:---|:---|:---|
-| 主体 | Manager がワーカーに割り当てる**作業指示**の待ち行列 | 人と AI が共有する**候補・残項目の台帳** |
-| 粒度 | 1 タスク＝1 ワーカーの 1 turn ぶんの仕事 | 1 項目＝「やるかもしれないこと」「やり残したこと」。タスクになる前と、タスクが終わった後の両方 |
-| 書く人 | Manager のツール（人間は直接編集しない） | 人間と AI の両方 |
+| 主体 | 運用担当の AI が各担当に割り当てる**作業指示**の待ち行列 | 人と AI が共有する**候補・残項目の台帳** |
+| 粒度 | 1 タスク＝1 担当の 1 回ぶんの仕事 | 1 項目＝「やるかもしれないこと」「やり残したこと」。タスクになる前と、タスクが終わった後の両方 |
+| 書く人 | 運用担当の AI のツール（人間は直接編集しない） | 人間と AI の両方 |
 | 寿命 | タスク完了で役目を終える | 完了後も履歴として残り、記事 URL で参照される |
-| 関係 | ― | 項目の `links` に `task:t-xxxx` を入れて**参照するだけ**。同期はしない |
+| 関係 | ― | 項目の `links` に `task:<外部の ID>` を入れて**参照するだけ**。同期はしない |
 
-ボードの項目が「やる」と決まったら Manager がタスクを切り、タスク ID を項目のリンクに書き戻す。逆方向（タスク → ボード）はワーカーの handoff の「残課題」を Manager が `add_item` で登録する。**自動同期は作らない**（二重管理の原因になる）。
+ボードの項目が「やる」と決まったら運用担当の AI がタスクを切り、その ID を項目のリンクに書き戻す。逆方向（タスク → ボード）は各担当の作業記録の「残課題」を運用担当の AI が `add_item` で登録する。**自動同期は作らない**（二重管理の原因になる）。
 
 ### 1-3. やらないこと（v1 のスコープ外）
 
@@ -56,7 +58,7 @@
 - クラウド同期・モバイルアプリ（LAN 閲覧まで）
 - 期限のリマインド通知（メール・Slack・push）
 - ガントチャート・工数管理
-- `.ai-team/tasks.json` との自動同期（§1-2）
+- 既存のタスク管理との自動同期（§1-2）
 - 添付ファイル（リンクで代用）
 
 ---
@@ -145,7 +147,7 @@
 +----------------------------------------------------------------------+
 ```
 
-★かんばんとリストのどちらを既定にするかは人間の決定（§10）。両方作り、既定だけ設定で切り替える。
+★かんばんとリストのどちらを既定にするかは §10-5。両方作り、既定だけ設定で切り替える。
 
 ### 2-5. 項目の詳細 `/w/{slug}/items/{id}`
 
@@ -155,7 +157,7 @@
 | #41  555 timer article (IC lab #6)                    [edit] [move v] |
 | status: candidate   priority: high   owner: human   due: 2026-09-20   |
 | tags: [ic-lab] [ne555]   created by: ai:claude-manager  2026-09-12    |
-| links: article /posts/ne555n-cmos-timer-ic-experiments/  task t-xxxx  |
+| links: article /posts/ne555n-cmos-timer-ic-experiments/  task PROJ-1  |
 +-----------------------------------------------------------------------+
 | BODY (markdown rendered)                                              |
 |  - why: ...                                                           |
@@ -217,7 +219,7 @@ erDiagram
 | `owner` | `human` / `ai:<name>` / NULL | **次に動く人**。作成者（author）とは別 |
 | `author`（作成者・記録者） | `human` / `ai:<name>` | `<name>` は `^[a-z0-9][a-z0-9._-]{0,39}$`。例 `ai:claude-manager`・`ai:gemini-analytics` |
 | `ai_policy`（ワークスペース） | `read_write` / `read_only` / `hidden` | MCP／REST から見えるか・書けるか。既定: ブログ＝`read_write`、開発＝`read_write`、**仕事＝`hidden`** |
-| `link.kind` | `article` / `task` / `url` | `article` はサイト内パス（`/posts/...`）、`task` は `.ai-team` のタスク ID、`url` はそれ以外 |
+| `link.kind` | `article` / `task` / `url` | `article` はサイト内パス（`/posts/...`）、`task` は外部タスク管理の ID（例: チケット番号）、`url` はそれ以外 |
 | `event.kind` | `item.created` / `item.updated` / `item.moved` / `item.completed` / `note.added` / `workspace.created` / `workspace.updated` | 追記のみ |
 
 状態遷移は**制限しない**（どの列からどの列へも移せる）。ただし `done` へ移すときは `completed_at` を打ち、`done` から出すときは NULL に戻す。
@@ -325,7 +327,7 @@ INSERT INTO schema_version VALUES (1);
   "tags": ["ic-lab", "ne555"],
   "links": [
     {"kind": "article", "target": "/posts/ne555n-cmos-timer-ic-experiments/", "label": "前作"},
-    {"kind": "task", "target": "t-e7effe32", "label": ""}
+    {"kind": "task", "target": "PROJ-123", "label": ""}
   ],
   "created_by": "ai:claude-manager",
   "created_at": "2026-09-12T00:40:00Z",
@@ -385,16 +387,16 @@ flowchart TD
 
 `ItemSummary` は `Item` から `body` を抜いたもの（一覧で本文を返すとコンテキストを食うため）。`EventSummary = {created_at, author, kind, item_id, payload}`。
 
-Manager の使い方の想定（ドッグフーディング）
+運用担当の AI の使い方の想定（ドッグフーディング）
 
 1. セッション開始時に `get_workspace_summary("blog")` と `("dev")` で残項目を把握
-2. 人間の指示で候補が出たら `add_item(...)`、タスクに切ったら `update_item(links=[{"kind":"task","target":"t-..."}])`＋`move_item(status="doing")`
-3. ワーカーの handoff の残課題を `add_item(status は candidate のまま, owner="human" or "ai:...")`
+2. 人間の指示で候補が出たら `add_item(...)`、タスクに切ったら `update_item(links=[{"kind":"task","target":"<外部の ID>"}])`＋`move_item(status="doing")`
+3. 各担当の作業記録の残課題を `add_item(status は candidate のまま, owner="human" or "ai:...")`
 4. 人間の判断待ちは `move_item(status="waiting_human", reason="...")`。人間は UI で見て `waiting_ai` に戻す
 
 ### 4-3. MCP サーバーの起動と Claude Code 側の設定
 
-サーバー本体（実装は App-Dev。ここは形だけ）
+サーバー本体（ここは形だけ。実装は `src/taskboard/mcp_server.py`）
 
 ```text
 mcp_server.py
@@ -407,17 +409,19 @@ Claude Code への登録（MCP チュートリアル記事と同じ流儀＝**�
 
 ```powershell
 claude mcp add --transport stdio -s user taskboard `
-  -e TASKBOARD_DB=E:\prog\ai-taskboard\data\taskboard.sqlite3 `
+  -e TASKBOARD_DB=C:\path\to\ai-taskboard\data\taskboard.sqlite3 `
   -e TASKBOARD_AUTHOR=ai:claude-manager `
-  -- E:\prog\ai-taskboard\.venv\Scripts\python.exe E:\prog\ai-taskboard\mcp_server.py
+  -- C:\path\to\ai-taskboard\.venv\Scripts\python.exe C:\path\to\ai-taskboard\mcp_server.py
 ```
 
-- `--` の後ろがサーバー起動コマンド（Claude Code docs: 「The `--` (double dash) separates Claude's own options ... from the command and arguments that run the server」）
-- スコープは `-s user`（どのフォルダで Claude Code を起動しても Manager がボードを見られるように）。チームの他メンバーに見せたくなければ `local`
-- 確認は `claude mcp list` の `✔ Connected` と、Claude Code 内の `/mcp`
-- `.mcp.json` に書く場合（リポジトリ同梱用）は `${TASKBOARD_DB:-E:\\prog\\ai-taskboard\\data\\taskboard.sqlite3}` のように `${VAR:-default}` 展開が使える（Claude Code docs）
+（`ai:claude-manager` は author 名の例。実装では起動コマンドを `uv run --directory C:/path/to/ai-taskboard taskboard mcp` にした。README 参照）
 
-Claude Code 側の権限: ツール名は `mcp__taskboard__add_item` のように `mcp__<server>__<tool>` になる。Manager の設定で書き込み系を許可リストに入れる（`mcp__taskboard__.*`）。★人間の判断（§10-6）
+- `--` の後ろがサーバー起動コマンド（Claude Code docs: 「The `--` (double dash) separates Claude's own options ... from the command and arguments that run the server」）
+- スコープは `-s user`（どのフォルダで Claude Code を起動しても運用担当の AI がボードを見られるように）。チームの他メンバーに見せたくなければ `local`
+- 確認は `claude mcp list` の `✔ Connected` と、Claude Code 内の `/mcp`
+- `.mcp.json` に書く場合（リポジトリ同梱用）は `${TASKBOARD_DB:-C:\\path\\to\\ai-taskboard\\data\\taskboard.sqlite3}` のように `${VAR:-default}` 展開が使える（Claude Code docs）
+
+Claude Code 側の権限: ツール名は `mcp__taskboard__add_item` のように `mcp__<server>__<tool>` になる。ホスト側の permissions で書き込み系を許可リストに入れる（`mcp__taskboard__*`）。★§10-6
 
 ### 4-4. REST との対応表（`/api/v1`）
 
@@ -435,10 +439,10 @@ Claude Code 側の権限: ツール名は `mcp__taskboard__add_item` のよう�
 | ― | `GET /api/v1/events?workspace=&since=&limit=` | 監査用。MCP には出さない |
 
 - 認証: **`Authorization: Bearer <TASKBOARD_TOKEN>` を必須**（localhost でも。REST は他の AI・スクリプトから叩く前提なので、UI と違って無認証にしない）
-- 作成者: **`X-Taskboard-Author: ai:gemini-analytics`** を必須。形式違いは 400
+- 作成者: **`X-Taskboard-Author: ai:<name>`**（例 `ai:gemini-analytics`）を必須。形式違いは 400
 - エラーは FastAPI 標準の `{"detail": "..."}`。404（不明）／400（検証）／403（`ai_policy`）／409（同じ状態への移動・二重完了）
 - `ai_policy` の扱いは MCP と同じ（hidden＝404）。**UI（`/w/...`）だけが hidden を見られる**
-- OpenAPI は `/docs`（FastAPI 自動生成）。Gemini 側（BlogAnalytics）にはこの URL を渡せば済む
+- OpenAPI は `/docs`（FastAPI 自動生成）。REST 経由で繋ぐ別の AI にはこの URL を渡せば済む
 
 ---
 
@@ -455,7 +459,7 @@ Claude Code 側の権限: ツール名は `mcp__taskboard__add_item` のよう�
 | python-multipart | 0.0.32 | Apache-2.0 | FastAPI docs `/tutorial/request-forms/` | フォーム POST に必要（FastAPI が要求） |
 | **SQLite** | 3.53.4（sqlite.org 表示）。Python 同梱の `sqlite3` を使う | Public Domain（sqlite.org/copyright.html） | https://sqlite.org/ ／WAL: https://sqlite.org/wal.html ／Python: https://docs.python.org/3/library/sqlite3.html | 1 ファイル＝バックアップがコピー 1 回。追加のサーバー不要。2 プロセス（Web・MCP）からの同時アクセスは WAL で足りる規模 |
 | **htmx** | **2.0.10**（htmx.org の Quick start が案内する版。CDN: `https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js`） | Zero-Clause BSD（リポジトリ LICENSE） | https://htmx.org/ ／リファレンス: https://htmx.org/reference/ | ビルド工程なしで部分更新ができる。**4.0.0 が 2026-08-28 に出ているが、htmx.org は「not currently marked as `latest` in NPM so that people using the 2.x line are not accidentally upgraded」としており、v1 は 2.x で作る**。オフラインでも動くようファイルを `static/` に同梱する（CDN 依存にしない） |
-| **MCP 公式 Python SDK** | `mcp` **2.2.0** | MIT | https://py.sdk.modelcontextprotocol.io/ ／ツール: `/servers/tools/` ／構造化出力: `/servers/structured-output/` ／エラー: `/servers/handling-errors/` ／起動: `/run/` ／テスト: `/get-started/testing/` ／ホスト接続: `/get-started/real-host/` ／GitHub: https://github.com/modelcontextprotocol/python-sdk | **2.x では `FastMCP` が `MCPServer` に改名**（`from mcp.server import MCPServer`）。Manager 既定案の「FastMCP」はこの `MCPServer` を指すものとして扱う。別プロジェクトの jlowin/fastmcp（2.x 系・Apache-2.0）は**使わない**（公式 SDK で足りる・記事の一貫性） |
+| **MCP 公式 Python SDK** | `mcp` **2.2.0** | MIT | https://py.sdk.modelcontextprotocol.io/ ／ツール: `/servers/tools/` ／構造化出力: `/servers/structured-output/` ／エラー: `/servers/handling-errors/` ／起動: `/run/` ／テスト: `/get-started/testing/` ／ホスト接続: `/get-started/real-host/` ／GitHub: https://github.com/modelcontextprotocol/python-sdk | **2.x では `FastMCP` が `MCPServer` に改名**（`from mcp.server import MCPServer`）。当初案の「FastMCP」はこの `MCPServer` を指すものとして扱う。別プロジェクトの jlowin/fastmcp（2.x 系・Apache-2.0）は**使わない**（公式 SDK で足りる・記事の一貫性） |
 | MCP Inspector | `mcp dev server.py` で起動（`npx` が必要） | MIT（GitHub 表示） | https://github.com/modelcontextprotocol/inspector | ツールを手で叩いて確認する UI。v0.3 の検証に使う |
 | uv | 0.12.13 | Apache-2.0（GitHub API 表示。リポジトリは MIT/Apache デュアル表記の可能性あり・**未確認**） | https://docs.astral.sh/uv/ ／`/concepts/projects/run/` | `uv run` で仮想環境の有効化なしに起動。MCP SDK docs も `uv run mcp dev` を案内 |
 | pytest | 9.1.1 | MIT | https://docs.pytest.org/ | FastAPI・MCP SDK の両方が pytest 前提 |
@@ -468,7 +472,7 @@ Claude Code 側の権限: ツール名は `mcp__taskboard__add_item` のよう�
 - **同じ関数を 3 つの入口から**: UI・REST・MCP が同じ service 層を呼ぶので、機能追加は 1 か所。テストも service 層に集中させる
 - **MCP チュートリアル記事の続編として自然**: 前作が「計算 3 つの MCP」、今作が「状態を持つ MCP（DB に書く）」。SDK・登録手順・エラーの流儀が同じ
 
-### 5-3. 着手時に確定した事項（2026-09-12・App-Dev t-a324f39f。Manager 決定を反映）
+### 5-3. 着手時に確定した事項（2026-09-12・実装着手時）
 
 - **Python: uv 管理の 3.12（3.12.12）で確定**（`.python-version` = 3.12・`requires-python >= 3.12`）。§0／§5-1 の「3.11」はこの決定で読み替える（本節以外は原文のまま）
 - **Markdown レンダラ: `markdown-it-py` 4.2.0（MIT）で確定**。`MarkdownIt("commonmark", {"html": False})` に table / strikethrough を有効化。生 HTML はエスケープされ、`javascript:`・`data:` 等の URL は markdown-it の既定 validateLink が落とす。リンクは `rel="noopener noreferrer"`、外部 URL は `target="_blank"`。テンプレートは Jinja2 autoescape
@@ -516,7 +520,7 @@ Claude Code 側の権限: ツール名は `mcp__taskboard__add_item` のよう�
 
 ## 7. 初期データの取り込み
 
-Manager が現在の残項目を別途渡す。SPEC では形式だけ決める。
+実運用の初期データはリポジトリに含めない（運用者が手元で用意して取り込む）。SPEC では形式だけ決める。例の項目は架空。
 
 ### 7-1. JSON（正）
 
@@ -532,17 +536,17 @@ Manager が現在の残項目を別途渡す。SPEC では形式だけ決める�
   "items": [
     {
       "workspace": "blog",
-      "title": "OWON VDS3102L レビュー: 写真 5 点と本体シルクを待って公開",
-      "body": "- 写真①〜⑤\n- 本体シルクの最大入力電圧",
+      "title": "555 タイマーの記事を書く（IC 実験室 #6）",
+      "body": "- 無安定／単安定の波形写真\n- 周波数の式の検算",
       "status": "waiting_human",
       "priority": "high",
       "owner": "human",
       "due": null,
-      "tags": ["pc-setup", "owon"],
-      "links": [{"kind": "task", "target": "t-e7effe32", "label": "ドラフト"}],
+      "tags": ["ic-lab", "ne555"],
+      "links": [{"kind": "task", "target": "PROJ-123", "label": "ドラフト"}],
       "created_by": "ai:claude-manager",
       "notes": [
-        {"author": "ai:claude-manager", "body": "第3回ヒアリングまで反映済み"}
+        {"author": "ai:claude-manager", "body": "ドラフトの骨子を作成。波形写真 3 枚が必要"}
       ]
     }
   ]
@@ -565,9 +569,9 @@ Manager が現在の残項目を別途渡す。SPEC では形式だけ決める�
 
 - ワークスペース: 「ブログ」「工作室」「読書」の 3 つ（**実運用の「仕事」は作らない**。仕事ページの存在を記事で匂わせない）
 - 項目 18 件（各 6 件・状態を全 6 列にばらす）。例: 「555 タイマーの記事を書く」「ESP32 の温度ロガー」「はんだ吸い取り器のレビュー」「トランジスタ増幅の実験を撮り直す」「積読: 定本 トランジスタ回路の設計」— **架空だが本サイトの読者に馴染む題材**
-- AI の書き込み例: `ai:claude-manager` が作った項目 5 件・ノート 6 件・`item.moved` の履歴 4 件（「候補 → 着手」「着手 → 待ち（人）」…）。**author 名も `ai:demo-assistant` にする**（実運用の名前を出さない）
+- AI の書き込み例: AI が作った項目 5 件・ノート 6 件・`item.moved` の履歴 4 件（「候補 → 着手」「着手 → 待ち（人）」…）。**author 名は `ai:demo-assistant`**（実運用の名前を出さない）
 - 人間の書き込み例: `human` のノート 4 件・クイック追加 3 件
-- スクショはこの DB を `TASKBOARD_DB=data/demo.sqlite3` で立ち上げて撮る。**実 DB のスクショ・実項目の引用は禁止**（人間指示 2026-09-12）
+- スクショはこの DB を `TASKBOARD_DB=data/demo.sqlite3` で立ち上げて撮る。**実 DB のスクショ・実項目の引用は禁止**
 
 ### 8-1. 記事①「候補と残項目を人と AI で管理する自作 Web アプリ｜FastAPI＋SQLite＋htmx で動くまで」
 
@@ -589,8 +593,8 @@ Manager が現在の残項目を別途渡す。SPEC では形式だけ決める�
 ### 8-3. 記事の制約
 
 - 「実機確認済み」等のメタ注記は書かない（既存方針）。事実は断定、未検証は明示
-- 内輪のディテール（タスク ID・メンバー名・実際の残項目）は出さない。**author の実名 `ai:claude-manager` も記事では `ai:demo-assistant`**
-- 書くのは Writer-Tech（App-Dev の実装が v0.3 に達してから）
+- 運用のディテール（外部タスク管理の ID・チーム内の名前・実際の残項目）は出さない。**実運用の author 名も記事では `ai:demo-assistant`**
+- 執筆は実装が v0.3 に達してから
 
 ---
 
@@ -601,22 +605,22 @@ Manager が現在の残項目を別途渡す。SPEC では形式だけ決める�
 | **v0.1** | 1 ワークスペース固定。項目の追加・一覧（かんばん＋リスト）・状態変更。SQLite・マイグレーション・`/healthz` | `pytest`: service 層（add／list／move で event が 1 件ずつ増える・status の CHECK 違反が弾かれる）＋`TestClient`（`/`・`/w/blog`・POST 追加・POST move が 200/303）。手動: ブラウザで追加→移動→再読み込みで残る |
 | **v0.2** | ワークスペース分割（`/w/{slug}`・作成・設定・`ai_policy`）・詳細画面・Markdown 本文・ノート・履歴・タグ・リンク・フィルタ・バックアップコマンド・JSON/CSV 取り込み | `pytest`: hidden の UI 表示は可・ノート追記 event・import の重複スキップ・Markdown の生 HTML が無効化される（`<script>` がエスケープされる）。手動: 取り込んだ実データが 3 ページに分かれて見える |
 | **v0.3** | MCP サーバー（9 ツール）＋REST（§4-4）＋Bearer/author ヘッダ。`ai_policy` の強制 | `pytest`: in-memory `Client(mcp, raise_exceptions=True)` で 9 ツール（正常系＋ToolError 系＝hidden／read_only／不明 ID／同一 status 移動）。`TestClient` で REST の 401／400／403／404／409。手動: `uv run mcp dev mcp_server.py`（Inspector）で全ツールを叩く → `claude mcp add` → `claude mcp list` が `✔ Connected` → Claude Code から `add_item` して UI に `[AI]` バッジで出る |
-| **v1.0** | ドッグフーディング開始（Manager の残項目をここへ）・ダミー DB（§8-0）・記事①②公開 | Manager が 1 週間運用して「チャットの残項目まとめ」を廃止できたか。記事は既存の検証セット（ビルド 0/0・literal `**` 0・FAQ JSON-LD 数一致） |
+| **v1.0** | ドッグフーディング開始（運用担当の AI の残項目をここへ）・ダミー DB（§8-0）・記事①②公開 | 運用担当の AI が 1 週間運用して「チャットの残項目まとめ」を廃止できたか。記事は既存の検証セット（ビルド 0/0・literal `**` 0・FAQ JSON-LD 数一致） |
 
 各版で **`uv run pytest` が緑**であること、**`data/` を消して起動しても初期化できる**ことを共通条件にする。
 
 ---
 
-## 10. 人間に決めてもらうこと（★）
+## 10. 決めたこと（既定値・本文の ★ の参照先）
 
-| # | 決めること | Manager 既定案（未回答ならこれ） | 影響 |
+| # | 決めること | 決定（既定値） | 影響 |
 |--:|:---|:---|:---|
 | 1 | **アプリ名**（表示名・リポジトリ名・MCP サーバー名） | `ai-taskboard` ／ MCP 名 `taskboard` | URL・記事タイトル・`claude mcp add` の名前 |
 | 2 | **初期ワークスペースの名前と slug** | ブログ `blog`／仕事 `work`／開発 `dev` | 取り込み JSON・記事のダミー名との区別 |
 | 3 | **LAN 公開の要否** | v1 は localhost のみ。必要ならトークン付きで `0.0.0.0` | §6-1 のログイン画面を作るかどうか |
 | 4 | **Python か Node か** | Python（FastAPI）。理由 §5・見送り §11-1 | 全体 |
 | 5 | **かんばん表示かリスト表示か（既定）** | かんばん既定・リストは切替 | ボードの初期表示だけ。両方作る |
-| 6 | Manager（Claude Code）に**書き込み系 MCP ツールを自動許可**するか | 読み取り系は自動許可、書き込み系（add／update／move／note／complete）は許可リストに入れる | Claude Code の permissions 設定 |
+| 6 | MCP ホスト（Claude Code）に**書き込み系 MCP ツールを自動許可**するか | 読み取り系は自動許可、書き込み系（add／update／move／note／complete）は許可リストに入れる | Claude Code の permissions 設定 |
 | 7 | ソースを **GitHub で公開**するか（記事から全文リンク） | 公開（MIT）。DB・取り込みデータは含めない | 記事①②の「全文はこちら」 |
 | 8 | 「仕事」ページの `ai_policy` 既定 | `hidden` | AI が仕事の項目を読めるか |
 
@@ -628,7 +632,7 @@ Manager が現在の残項目を別途渡す。SPEC では形式だけ決める�
 
 | 案 | 見送る理由 |
 |:---|:---|
-| **Node（Express／Hono＋SQLite）** | MCP・REST・UI を 1 言語でまとめる点は同じだが、MCP チュートリアル記事（Python）との連続性が切れる。Manager 既定案が Python。★人間が Node を選べば §4 の SDK を TypeScript SDK に読み替える |
+| **Node（Express／Hono＋SQLite）** | MCP・REST・UI を 1 言語でまとめる点は同じだが、MCP チュートリアル記事（Python）との連続性が切れる。既定は Python。Node を選ぶなら §4 の SDK を TypeScript SDK に読み替える |
 | **Streamlit** | 画面は速く作れるが、URL で項目を直接開く（`/w/{slug}/items/{id}`）・フォーム POST・部分更新に向かない。AI が返す URL を人間が踏む運用と相性が悪い |
 | **SPA（React／Vue＋API）** | ビルド工程と依存が増える。1 人用の CRUD に見合わない。htmx で足りる |
 | **Django** | 管理画面は魅力だが、MCP サーバーと Pydantic モデルを共有する点で FastAPI のほうが素直。規模も小さい |
@@ -646,7 +650,7 @@ Manager が現在の残項目を別途渡す。SPEC では形式だけ決める�
 | **Trello（API）** | 同上（クラウド）。列＝状態の表現は近いが、author を `ai:*` で残す仕組みは自前で被せる必要がある |
 | **GitHub Projects（GraphQL API）** | 開発項目には向くが、ブログ候補・仕事項目を GitHub に置く理由が無い。API が GraphQL で MCP 化の手間が本題より大きい |
 | **Obsidian／Markdown ファイル＋git** | 人間には快適だが、AI が構造化して書く口（状態・履歴）が弱い。event ログを自前で持ちたい |
-| **`.ai-team/tasks.json` を拡張** | 役割が違う（§1-2）。ワーカー割当の待ち行列に候補台帳を混ぜると Manager の運用が壊れる |
+| **既存のタスク管理（作業指示の待ち行列）を拡張** | 役割が違う（§1-2）。担当割当の待ち行列に候補台帳を混ぜると運用が壊れる |
 
 ### 11-3. 機能
 
@@ -654,9 +658,9 @@ Manager が現在の残項目を別途渡す。SPEC では形式だけ決める�
 |:---|:---|
 | ドラッグ＆ドロップで列移動 | htmx だけでは作れず JS が要る。`<select>`＋`hx-post` で同じ結果。v1.1 候補 |
 | 削除機能 | 履歴を残す方針と衝突。保留列＋アーカイブで代用 |
-| 通知（期限） | `get_workspace_summary` の `overdue` を Manager が毎セッション読めば足りる |
+| 通知（期限） | `get_workspace_summary` の `overdue` を運用担当の AI が毎セッション読めば足りる |
 | 複数ユーザー・ログイン | 単一ユーザー前提。LAN 公開もトークン 1 本 |
-| 自動同期（tasks.json ↔ ボード） | 二重管理の温床。リンクで参照するだけ |
+| 自動同期（既存のタスク管理 ↔ ボード） | 二重管理の温床。リンクで参照するだけ |
 
 ---
 
@@ -670,6 +674,6 @@ Manager が現在の残項目を別途渡す。SPEC では形式だけ決める�
 - Claude Code MCP: https://code.claude.com/docs/en/mcp （`claude mcp add ... -- <command>`・`-e`・`-s`・`.mcp.json` の `${VAR:-default}`・`mcp__<server>__<tool>`）
 - uv: https://docs.astral.sh/uv/ （`uv run`）。GitHub release 0.12.13
 - PyPI（版・ライセンス）: uvicorn 0.52.4 BSD-3 ／ Jinja2 3.1.6 ／ python-multipart 0.0.32 Apache-2.0 ／ pytest 9.1.1 MIT ／ httpx 0.28.1 BSD-3
-- 前作の記事: `content/posts/20260903_mcp-server-tutorial/index.md`（SDK 1.x→2.x の `FastMCP`→`MCPServer` 改名・`ToolError` 以外は文言が届かない・フルパス登録）
+- 前作の記事: https://electwork.net/posts/claude-code-mcp-server-tutorial-python/ （SDK 1.x→2.x の `FastMCP`→`MCPServer` 改名・`ToolError` 以外は文言が届かない・フルパス登録）
 
 未確認: uv のライセンス表記（GitHub API は Apache-2.0。MIT とのデュアルかは未確認）／Jinja2 の PyPI メタデータに license 文字列が無い（BSD-3-Clause はプロジェクトの LICENSE による）／Markdown レンダラの選定（§5-3）

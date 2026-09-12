@@ -1,4 +1,4 @@
-# AI タスクボード 技術検証スパイク (t-6a38efa9)
+# AI タスクボード 技術検証スパイク
 # SPEC 完成前の「動くことの確認」専用。本実装は別ディレクトリで組み直す。
 [project]
 name = "ai-taskboard-spike"

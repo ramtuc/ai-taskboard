@@ -24,7 +24,7 @@ DEFAULT_PORT = 8765
 
 log = logging.getLogger("taskboard")
 
-INITIAL_WORKSPACES = [  # Manager 決定（SPEC §10-2 / §10-8）
+INITIAL_WORKSPACES = [  # SPEC §10-2 / §10-8 の既定値
     {"slug": "blog", "name": "ブログ", "ai_policy": "read_write"},
     {"slug": "work", "name": "仕事", "ai_policy": "hidden"},
     {"slug": "dev", "name": "開発", "ai_policy": "read_write"},

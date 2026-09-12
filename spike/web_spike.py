@@ -1,4 +1,4 @@
-"""FastAPI + SQLite + HTMX スパイク (t-6a38efa9)
+"""FastAPI + SQLite + HTMX スパイク
 
 SQLite の1テーブル (items) に対して「一覧 + 追加フォーム」だけの最小ページ。
 追加は HTMX の hx-post で一覧部分だけを差し替える (フルリロードなし・ビルド工程なし)。

@@ -1,6 +1,6 @@
-# AI タスクボード 技術検証スパイク — 結果 (t-6a38efa9)
+# AI タスクボード 技術検証スパイク — 結果
 
-実施日: 2026-09-12 ／ 担当: App-Dev ／ 場所: `E:\prog\ai-taskboard\spike\`（SPEC.md には触れていない・git 操作なし）
+実施日: 2026-09-12 ／ 担当: 実装担当 ／ 場所: `C:\path\to\ai-taskboard\spike\`（SPEC.md には触れていない・git 操作なし）
 
 結論（先に）:
 - **Claude Code への MCP 登録は通った**。`claude mcp add` → `claude mcp list` で `√ Connected`、さらに headless の `claude -p` から `add_item`/`list_items` を実際に呼んで日本語が往復することまで確認。
@@ -23,7 +23,7 @@
 
 SQLite 版の確認コマンド（`python` が無いので uv 経由）:
 ```
-uv run --directory E:/prog/ai-taskboard/spike python -c "import sqlite3;print(sqlite3.sqlite_version)"   # 3.50.4
+uv run --directory C:/path/to/ai-taskboard/spike python -c "import sqlite3;print(sqlite3.sqlite_version)"   # 3.50.4
 py -3.11 -c "import sqlite3;print(sqlite3.sqlite_version)"                                                  # 3.45.1
 ```
 
@@ -70,55 +70,55 @@ py -3.11 -c "import sqlite3;print(sqlite3.sqlite_version)"                      
 ### 3-2. MCP Inspector CLI（v2.6.0）
 ```
 # Git Bash から（Node 22.17.0 なので EBADENGINE 警告が出るが動作した）
-npx --yes @modelcontextprotocol/inspector@2.6.0 --cli uv run --directory E:/prog/ai-taskboard/spike mcp_spike.py -- --method tools/list --format json
+npx --yes @modelcontextprotocol/inspector@2.6.0 --cli uv run --directory C:/path/to/ai-taskboard/spike mcp_spike.py -- --method tools/list --format json
 #  → add_item (in: title,author / out: Item), list_items (out: list_itemsOutput), spike_env (out: EnvInfo)
-npx --yes @modelcontextprotocol/inspector@2.6.0 --cli uv run --directory E:/prog/ai-taskboard/spike mcp_spike.py -- --method tools/call --tool-name add_item --tool-args-json '{"title":"日本語タイトル ✓ 〜","author":"ai:inspector"}' --format json
+npx --yes @modelcontextprotocol/inspector@2.6.0 --cli uv run --directory C:/path/to/ai-taskboard/spike mcp_spike.py -- --method tools/call --tool-name add_item --tool-args-json '{"title":"日本語タイトル ✓ 〜","author":"ai:inspector"}' --format json
 #  → {"result":{"content":[{"type":"text","text":"{...}"}],"structuredContent":{"id":1,"title":"日本語タイトル ✓ 〜","author":"ai:inspector","created_at":"2026-09-12T01:43:46+00:00"},"isError":false}}
 #  空タイトル → {"content":[{"type":"text","text":"Error executing tool add_item: title must not be empty"}],"isError":true}
 ```
 - Inspector CLI は 1 コマンド = 1 プロセスなので、`list_items` を別コマンドで呼ぶと空（メモリが消える）。これは仕様。
-- 公式 docs 推奨形 `uv run --with "mcp[cli]==2.2.0" mcp run E:/prog/ai-taskboard/spike/mcp_spike.py` でも接続可（`mcp run` はモジュール直下の `mcp` 変数を探す）。
+- 公式 docs 推奨形 `uv run --with "mcp[cli]==2.2.0" mcp run C:/path/to/ai-taskboard/spike/mcp_spike.py` でも接続可（`mcp run` はモジュール直下の `mcp` 変数を探す）。
 - 単体起動 `uv run --directory … mcp_spike.py` は何も出力せず待機（stdin 待ち）= 正常。
 
 ### 3-3. ★Claude Code への登録（実証）
 ```
-PS E:\prog\ai-taskboard\spike> claude mcp add taskboard-spike -- uv run --directory E:/prog/ai-taskboard/spike mcp_spike.py
-Added stdio MCP server taskboard-spike with command: uv run --directory E:/prog/ai-taskboard/spike mcp_spike.py to local config
-File modified: C:\Users\<user>\.claude.json [project: E:\prog\ai-taskboard\spike]
+PS C:\path\to\ai-taskboard\spike> claude mcp add taskboard-spike -- uv run --directory C:/path/to/ai-taskboard/spike mcp_spike.py
+Added stdio MCP server taskboard-spike with command: uv run --directory C:/path/to/ai-taskboard/spike mcp_spike.py to local config
+File modified: C:\Users\<user>\.claude.json [project: C:\path\to\ai-taskboard\spike]
 
-PS E:\prog\ai-taskboard\spike> claude mcp get taskboard-spike
+PS C:\path\to\ai-taskboard\spike> claude mcp get taskboard-spike
 taskboard-spike:
   Scope: Local config (private to you in this project)
   Status: √ Connected
   Type: stdio
   Command: uv
-  Args: run --directory E:/prog/ai-taskboard/spike mcp_spike.py
+  Args: run --directory C:/path/to/ai-taskboard/spike mcp_spike.py
 
-PS E:\prog\ai-taskboard\spike> claude mcp list
+PS C:\path\to\ai-taskboard\spike> claude mcp list
 Checking MCP server health…
 claude.ai Google Drive: … - √ Connected
 claude.ai Gmail: … - √ Connected
 claude.ai Google Calendar: … - √ Connected
 plugin:comfy-cloud:comfy-cloud: https://cloud.comfy.org/mcp (HTTP) - ! Needs authentication
-taskboard-spike: uv run --directory E:/prog/ai-taskboard/spike mcp_spike.py - √ Connected
+taskboard-spike: uv run --directory C:/path/to/ai-taskboard/spike mcp_spike.py - √ Connected
 ```
 - local スコープなので **ブログリポジトリ（D:\website\electwork-hp）で `claude mcp list` しても出てこない**（確認済み・意図通り）。
 - **ツールが本当に見えて呼べるかの決定打**: headless で Claude Code を起動して3ツールを呼ばせた。
 ```
-PS E:\prog\ai-taskboard\spike> claude -p "Using ONLY the MCP tools from the server 'taskboard-spike': (1) call add_item with title='日本語の項目 ✓' and author='ai:claude-code'; (2) then call list_items; (3) then call spike_env. Reply with exactly the raw JSON results…" --output-format json --allowedTools "mcp__taskboard-spike__add_item,mcp__taskboard-spike__list_items,mcp__taskboard-spike__spike_env" --max-turns 8
+PS C:\path\to\ai-taskboard\spike> claude -p "Using ONLY the MCP tools from the server 'taskboard-spike': (1) call add_item with title='日本語の項目 ✓' and author='ai:claude-code'; (2) then call list_items; (3) then call spike_env. Reply with exactly the raw JSON results…" --output-format json --allowedTools "mcp__taskboard-spike__add_item,mcp__taskboard-spike__list_items,mcp__taskboard-spike__spike_env" --max-turns 8
 # is_error=False  num_turns=5  duration_ms=10862  (session cd9fddcd-…)
 {"id":1,"title":"日本語の項目 ✓","author":"ai:claude-code","created_at":"2026-09-12T01:45:27+00:00"}
 {"result":[{"id":1,"title":"日本語の項目 ✓","author":"ai:claude-code","created_at":"2026-09-12T01:45:27+00:00"}]}
-{"cwd":"E:\\prog\\ai-taskboard\\spike","python":"3.12.12","executable":"E:\\prog\\ai-taskboard\\spike\\.venv\\Scripts\\python.exe","claude_project_dir":"E:\\prog\\ai-taskboard\\spike","stdin_encoding":"utf-8","stdout_encoding":"utf-8","pythonioencoding":"utf-8:surrogateescape"}
+{"cwd":"C:\\path\\to\\ai-taskboard\\spike","python":"3.12.12","executable":"C:\\path\\to\\ai-taskboard\\spike\\.venv\\Scripts\\python.exe","claude_project_dir":"C:\\path\\to\\ai-taskboard\\spike","stdin_encoding":"utf-8","stdout_encoding":"utf-8","pythonioencoding":"utf-8:surrogateescape"}
 ```
   - ツール名は `mcp__<server>__<tool>` で見える。`list_items` が `add_item` の結果を返している＝**同一セッション内は同じ子プロセスが生き続ける**。
   - Claude Code はサーバー環境に `CLAUDE_PROJECT_DIR` と **`PYTHONIOENCODING=utf-8:surrogateescape`** を入れて起動する（Inspector 経由では cp932 だった）。いずれにせよ SDK 側で UTF-8 固定なので差は出ない。
-- 登録は **残してある**（次工程で本物に差し替えるまでの動作見本）。外すときは `claude mcp remove taskboard-spike -s local`（`E:\prog\ai-taskboard\spike` で実行）。
+- 登録は **残してある**（次工程で本物に差し替えるまでの動作見本）。外すときは `claude mcp remove taskboard-spike -s local`（`C:\path\to\ai-taskboard\spike` で実行）。
 
 ## 4. FastAPI＋HTMX スパイク（`web_spike.py`）
 
 - 構成: `items(id, title, author, created_at)` の1テーブル（`spike.db`・起動時 `CREATE TABLE IF NOT EXISTS`）。`GET /` = フルページ、`POST /items` = **部分テンプレート `_items.html` だけ**を返し、HTMX が `#item-list` を `outerHTML` で差し替え。`GET /api/items` = 同じ関数を REST で出す最小デモ。
-- 起動: `uv run --directory E:/prog/ai-taskboard/spike web_spike.py` → `spike: http://127.0.0.1:8000/ (pid=66556)`。ポートは `SPIKE_PORT` か 8000〜8099 の空き。
+- 起動: `uv run --directory C:/path/to/ai-taskboard/spike web_spike.py` → `spike: http://127.0.0.1:8000/ (pid=66556)`。ポートは `SPIKE_PORT` か 8000〜8099 の空き。
 - バインド確認（netstat）: `TCP 127.0.0.1:8000 0.0.0.0:0 LISTENING 66556` — **127.0.0.1 のみ**。終了は自分の PID のみ `Stop-Process -Id 66556`。
 - curl 検証: `GET /` 200（`hx-post="/items"`, `hx-target="#item-list"`, `hx-swap="outerHTML"`, `/static/htmx.min.js` 参照）／`GET /static/htmx.min.js` 200 51,238 B／`POST /items`（UTF-8 percent-encode）→ `<li>#3 日本語の項目 ✓ 〜<span class="badge ai">ai:spike</span>…` ／`<script>alert(1)</script>` は `&lt;script&gt;` にエスケープ（Jinja2 autoescape）／空白タイトルは追加されない。
 - **実ブラウザ検証（headless Chrome 152 + CDP）**: ページ内 `htmx.version = "2.0.10"`（ローカルバンドル読込 OK）→ input に「ブラウザから追加 ✓」を入れて「追加」クリック → `#item-list` に `#6 ブラウザから追加 ✓` が増え、**`window.__marker` が保持＝ページリロード無し（部分更新）**、`hx-on::after-request` でフォームがリセット。RESULT: PASS。
@@ -128,7 +128,7 @@ PS E:\prog\ai-taskboard\spike> claude -p "Using ONLY the MCP tools from the serv
 
 | # | 事象 | 原因 | 回避策 |
 |:--|:--|:--|:--|
-| 1 | `from mcp.server.fastmcp import FastMCP` が無い | 公式 SDK **v2 で `FastMCP` → `MCPServer` に改名**（旧 import は deprecated ではなく削除。`mcp.server.fastmcp.*` → `mcp.server.mcpserver.*`、`FastMCPError` → `MCPServerError`） | `from mcp.server import MCPServer`（v2 で書く）。E:\prog\elec-calc-mcp（`mcp>=2.1,<3`）と公開済み MCP チュートリアル（20260903）はすでに `MCPServer` なので**同じ書き方で続編にできる**（2.1.1 → 2.2.0 で今回使った API に変更なし） |
+| 1 | `from mcp.server.fastmcp import FastMCP` が無い | 公式 SDK **v2 で `FastMCP` → `MCPServer` に改名**（旧 import は deprecated ではなく削除。`mcp.server.fastmcp.*` → `mcp.server.mcpserver.*`、`FastMCPError` → `MCPServerError`） | `from mcp.server import MCPServer`（v2 で書く）。公開済みの elec-calc-mcp（`mcp>=2.1,<3`）と MCP チュートリアル記事（20260903）はすでに `MCPServer` なので**同じ書き方で続編にできる**（2.1.1 → 2.2.0 で今回使った API に変更なし） |
 | 2 | `CallToolResult.structuredContent` が無い | v2 は **snake_case**（`structured_content`, `output_schema`） | v2 の属性名で書く |
 | 3 | `-> dict` のツールに output_schema が付かず `structured_content` が None | 型注釈がそのまま出力スキーマ。素の `dict` は対象外（`dict[str, X]`・TypedDict・BaseModel は対象）。`list[...]` は `{"result": [...]}` に包まれる | 戻り値は TypedDict／pydantic で宣言する |
 | 4 | Inspector v2.6.0 が `npm warn EBADENGINE`（node ≥22.19.0 要求、実機 22.17.0） | engines 不一致（警告のみ） | そのまま動作した。**未確認: 22.17.0 で全機能が動く保証はない**。Node を 22.19 以上へ更新するか `@v1-latest`(1.0.2) を使う |
@@ -138,16 +138,16 @@ PS E:\prog\ai-taskboard\spike> claude -p "Using ONLY the MCP tools from the serv
 | 8 | headless Chrome が exit 21 で即死 | `--user-data-dir` をスクラッチパッド（長い一時パス）に置いたとき | `D:\tmp\chrome-udd-*` に置く。Chrome の kill は自分の PID のみ |
 | 9 | `python` コマンドが無い | PATH に 3.10 の Scripts しか無く本体が無い | `py -3.11` か **uv 経由**（プロジェクトは `.python-version`=3.12 で uv 管理 CPython を使う） |
 
-Windows パス: `--directory E:/prog/ai-taskboard/spike` のスラッシュ表記で uv・Claude Code・Inspector すべて通った（バックスラッシュのエスケープ地獄を避けられる）。
+Windows パス: `--directory C:/path/to/ai-taskboard/spike` のスラッシュ表記で uv・Claude Code・Inspector すべて通った（バックスラッシュのエスケープ地獄を避けられる）。
 
 ## 6. 再現手順（まとめ）
 ```
-cd E:\prog\ai-taskboard\spike
+cd C:\path\to\ai-taskboard\spike
 uv sync                                                        # .python-version=3.12, uv.lock で固定
 uv run python -m pytest -q tests                               # 6 passed（MCP 2 + Web 4）
 uv run web_spike.py                                            # http://127.0.0.1:8000/  Ctrl+C で終了
-npx.cmd --yes @modelcontextprotocol/inspector@2.6.0 --cli uv run --directory E:/prog/ai-taskboard/spike mcp_spike.py -- --method tools/list --format json
-claude mcp add taskboard-spike -- uv run --directory E:/prog/ai-taskboard/spike mcp_spike.py   # local scope
+npx.cmd --yes @modelcontextprotocol/inspector@2.6.0 --cli uv run --directory C:/path/to/ai-taskboard/spike mcp_spike.py -- --method tools/list --format json
+claude mcp add taskboard-spike -- uv run --directory C:/path/to/ai-taskboard/spike mcp_spike.py   # local scope
 claude mcp list                                                # taskboard-spike … √ Connected
 ```
 

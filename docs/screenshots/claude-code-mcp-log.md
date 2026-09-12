@@ -1,41 +1,41 @@
 # v0.3 実証ログ — Claude Code から MCP でボードに書く（demo DB）
 
-2026-09-12 / App-Dev / すべて **`data/demo.sqlite3`（架空データ）** に対して実施。author は `ai:demo-assistant`。
+2026-09-12 / 実装担当 / すべて **`data/demo.sqlite3`（架空データ）** に対して実施。author は `ai:demo-assistant`。
 
-## 1. 登録（local scope・`E:\prog\ai-taskboard` で実行）
+## 1. 登録（local scope・`C:\path\to\ai-taskboard` で実行）
 
 ```powershell
-PS E:\prog\ai-taskboard> claude mcp add taskboard -e TASKBOARD_DB=E:/prog/ai-taskboard/data/demo.sqlite3 -e TASKBOARD_AUTHOR=ai:demo-assistant -e TASKBOARD_BASE_URL=http://127.0.0.1:8765 -e PYTHONUTF8=1 -- uv run --directory E:/prog/ai-taskboard taskboard mcp
-Added stdio MCP server taskboard with command: uv run --directory E:/prog/ai-taskboard taskboard mcp to local config
-File modified: C:\Users\<user>\.claude.json [project: E:\prog\ai-taskboard]
+PS C:\path\to\ai-taskboard> claude mcp add taskboard -e TASKBOARD_DB=C:/path/to/ai-taskboard/data/demo.sqlite3 -e TASKBOARD_AUTHOR=ai:demo-assistant -e TASKBOARD_BASE_URL=http://127.0.0.1:8765 -e PYTHONUTF8=1 -- uv run --directory C:/path/to/ai-taskboard taskboard mcp
+Added stdio MCP server taskboard with command: uv run --directory C:/path/to/ai-taskboard taskboard mcp to local config
+File modified: C:\Users\<user>\.claude.json [project: C:\path\to\ai-taskboard]
 
-PS E:\prog\ai-taskboard> claude mcp get taskboard
+PS C:\path\to\ai-taskboard> claude mcp get taskboard
 taskboard:
   Scope: Local config (private to you in this project)
   Status: √ Connected
   Type: stdio
   Command: uv
-  Args: run --directory E:/prog/ai-taskboard taskboard mcp
+  Args: run --directory C:/path/to/ai-taskboard taskboard mcp
   Environment:
-    TASKBOARD_DB=E:/prog/ai-taskboard/data/demo.sqlite3
+    TASKBOARD_DB=C:/path/to/ai-taskboard/data/demo.sqlite3
     TASKBOARD_AUTHOR=ai:demo-assistant
     TASKBOARD_BASE_URL=http://127.0.0.1:8765
     PYTHONUTF8=1
 
-PS E:\prog\ai-taskboard> claude mcp list
+PS C:\path\to\ai-taskboard> claude mcp list
 Checking MCP server health…
 claude.ai Google Drive: … - √ Connected
 claude.ai Gmail: … - √ Connected
 claude.ai Google Calendar: … - √ Connected
 plugin:comfy-cloud:comfy-cloud: https://cloud.comfy.org/mcp (HTTP) - ! Needs authentication
-taskboard-spike: uv run --directory E:/prog/ai-taskboard/spike mcp_spike.py - √ Connected   ← スパイクの登録（本タスクの最後に remove）
-taskboard: uv run --directory E:/prog/ai-taskboard taskboard mcp - √ Connected
+taskboard-spike: uv run --directory C:/path/to/ai-taskboard/spike mcp_spike.py - √ Connected   ← スパイクの登録（本タスクの最後に remove）
+taskboard: uv run --directory C:/path/to/ai-taskboard taskboard mcp - √ Connected
 ```
 
 ## 2. Claude Code がツールを呼ぶ（headless `claude -p`）
 
 ```powershell
-PS E:\prog\ai-taskboard> claude -p "Use ONLY the MCP tools of server 'taskboard'. (1) add_item workspace='blog' title='Claude Code から追加: LED 点滅の記事案（デモ）' … tags=['demo','mcp']; (2) list_items workspace='blog' query='Claude Code から追加'; (3) add_note on that item body='MCP 経由のノート（デモ）。次は写真を撮る。' Reply with the three raw JSON results." --output-format json --allowedTools "mcp__taskboard__add_item,mcp__taskboard__list_items,mcp__taskboard__add_note" --max-turns 8
+PS C:\path\to\ai-taskboard> claude -p "Use ONLY the MCP tools of server 'taskboard'. (1) add_item workspace='blog' title='Claude Code から追加: LED 点滅の記事案（デモ）' … tags=['demo','mcp']; (2) list_items workspace='blog' query='Claude Code から追加'; (3) add_note on that item body='MCP 経由のノート（デモ）。次は写真を撮る。' Reply with the three raw JSON results." --output-format json --allowedTools "mcp__taskboard__add_item,mcp__taskboard__list_items,mcp__taskboard__add_note" --max-turns 8
 # is_error=False  num_turns=5  duration_ms=13575  cost≈$0.18  session=285f474b-…
 ```
 

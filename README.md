@@ -222,7 +222,7 @@ JSON の形式（完全な例は [seed/demo.json](seed/demo.json)）:
 }
 ```
 
-- `status`: `candidate` / `doing` / `waiting_human` / `waiting_ai` / `done` / `hold`。`priority`: `low` / `normal` / `high` / `urgent`。`owner`・`created_by`・ノートの `author`: `human` か `ai:<名前>`。`links[].kind`: `article`（サイト内パス）/ `task`（外部のタスク ID・リンクにならない）/ `url`
+- `status`: `candidate` / `doing` / `waiting_human` / `waiting_ai` / `done` / `hold`。`priority`: `low` / `normal` / `high` / `urgent`。`owner`・`created_by`・ノートの `author`: `human` か `ai:<名前>`。`links[].kind`: `article`（サイト内パス）/ `task`（外部タスク管理の ID。例: チケット番号・リンクにならない）/ `url`
 - 無いワークスペースは作られる。**同じワークスペースに同じタイトルがあればスキップ**する（上書きしない）
 - `moves` は任意。作成後にその順で状態変更が適用され、履歴になる（`status` は作成時の状態）
 - `created_by` が無い項目は `--author`（既定 `human`）。取り込みの履歴は `source = import`
