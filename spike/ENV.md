@@ -15,10 +15,10 @@
 |:--|:--|:--|
 | OS | Windows 11 Pro 10.0.26200 | シェルは Windows PowerShell 5.1.26100 と Git Bash |
 | Python (`py` ランチャ) | 3.11.9 (`-3.11`), 3.10.11 (`-3.10`) | **`python` は PATH に無い**（`py` 経由か uv 経由）。3.11.9 の SQLite は 3.45.1、3.10.11 は 3.40.1 |
-| uv | 0.9.21 (2025-12-30) | `C:\Users\shun\.local\bin\uv.exe`。`uv python find` の既定は **uv 管理の CPython 3.12.12** |
+| uv | 0.9.21 (2025-12-30) | `C:\Users\<user>\.local\bin\uv.exe`。`uv python find` の既定は **uv 管理の CPython 3.12.12** |
 | Python (uv 管理・本スパイクで採用) | 3.12.12 | **SQLite 3.50.4**。`.python-version` = 3.12 で固定 |
 | node / npm / npx | v22.17.0 / 10.9.2 / 10.9.2 | `C:\Program Files\nodejs`。PowerShell では `npx` → `npx.ps1` シムに解決される（§5 の罠） |
-| Claude Code CLI | 2.1.269 | `C:\Users\shun\.local\bin\claude.exe` |
+| Claude Code CLI | 2.1.269 | `C:\Users\<user>\.local\bin\claude.exe` |
 | Chrome（検証用） | 152.0.7977.83 | headless Chrome + CDP で HTMX を実ブラウザ検証 |
 
 SQLite 版の確認コマンド（`python` が無いので uv 経由）:
@@ -84,7 +84,7 @@ npx --yes @modelcontextprotocol/inspector@2.6.0 --cli uv run --directory E:/prog
 ```
 PS E:\prog\ai-taskboard\spike> claude mcp add taskboard-spike -- uv run --directory E:/prog/ai-taskboard/spike mcp_spike.py
 Added stdio MCP server taskboard-spike with command: uv run --directory E:/prog/ai-taskboard/spike mcp_spike.py to local config
-File modified: C:\Users\shun\.claude.json [project: E:\prog\ai-taskboard\spike]
+File modified: C:\Users\<user>\.claude.json [project: E:\prog\ai-taskboard\spike]
 
 PS E:\prog\ai-taskboard\spike> claude mcp get taskboard-spike
 taskboard-spike:

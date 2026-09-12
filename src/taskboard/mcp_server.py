@@ -1,6 +1,6 @@
 """MCP サーバー（stdio）— Claude Code などのホストが子プロセスとして起動する（SPEC §4-2 / §4-3）。
 
-起動:  uv run --directory E:/prog/ai-taskboard taskboard mcp
+起動:  uv run --directory C:/path/to/ai-taskboard taskboard mcp
 環境変数:
   TASKBOARD_AUTHOR  書き込みの author（`ai:<名前>`・必須）。ツール引数では受け付けない（なりすまし防止）
   TASKBOARD_DB      SQLite ファイル（既定 data/taskboard.sqlite3）

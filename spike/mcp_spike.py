@@ -5,8 +5,8 @@
 `add_item` / `list_items` の2ツール (+診断用 spike_env) だけを持つ stdio サーバー。
 
 起動 (ホストが子プロセスとして起動する。単体で叩くと stdin 待ちで黙るのが正常):
-    uv run --directory E:/prog/ai-taskboard/spike mcp_spike.py
-    uv run --with "mcp[cli]==2.2.0" mcp run E:/prog/ai-taskboard/spike/mcp_spike.py
+    uv run --directory C:/path/to/ai-taskboard/spike mcp_spike.py
+    uv run --with "mcp[cli]==2.2.0" mcp run C:/path/to/ai-taskboard/spike/mcp_spike.py
 
 注意:
 - stdio では stdout がプロトコルそのもの。print() は使わない (logging の既定ハンドラ = stderr)。

@@ -1,7 +1,7 @@
 """mcp_spike の自動テスト。
 1) インメモリ (Client(server)) と 2) 実 stdio 子プロセス (uv run) の両方で
 add_item/list_items を呼び、日本語が壊れないことを確認する。
-実行: uv run --directory E:/prog/ai-taskboard/spike python -m pytest -q  (pytest 未導入なら python tests/test_mcp_spike.py)
+実行: uv run --directory C:/path/to/ai-taskboard/spike python -m pytest -q  (pytest 未導入なら python tests/test_mcp_spike.py)
 """
 from __future__ import annotations
 

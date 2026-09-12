@@ -7,7 +7,7 @@
 ```powershell
 PS E:\prog\ai-taskboard> claude mcp add taskboard -e TASKBOARD_DB=E:/prog/ai-taskboard/data/demo.sqlite3 -e TASKBOARD_AUTHOR=ai:demo-assistant -e TASKBOARD_BASE_URL=http://127.0.0.1:8765 -e PYTHONUTF8=1 -- uv run --directory E:/prog/ai-taskboard taskboard mcp
 Added stdio MCP server taskboard with command: uv run --directory E:/prog/ai-taskboard taskboard mcp to local config
-File modified: C:\Users\shun\.claude.json [project: E:\prog\ai-taskboard]
+File modified: C:\Users\<user>\.claude.json [project: E:\prog\ai-taskboard]
 
 PS E:\prog\ai-taskboard> claude mcp get taskboard
 taskboard:

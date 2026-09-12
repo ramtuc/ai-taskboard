@@ -3,7 +3,7 @@
 SQLite の1テーブル (items) に対して「一覧 + 追加フォーム」だけの最小ページ。
 追加は HTMX の hx-post で一覧部分だけを差し替える (フルリロードなし・ビルド工程なし)。
 
-起動:  uv run --directory E:/prog/ai-taskboard/spike web_spike.py
+起動:  uv run --directory C:/path/to/ai-taskboard/spike web_spike.py
        (環境変数 SPIKE_PORT で固定可。未指定なら 8000〜8099 の空きを使う)
 バインドは 127.0.0.1 のみ (localhost 以外からは到達できない)。
 """

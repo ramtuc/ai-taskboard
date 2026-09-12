@@ -1,6 +1,6 @@
 [project]
 name = "ai-taskboard"
-version = "0.3.0"
+version = "1.0.0"
 description = "Local web board where humans and AI manage candidates and leftovers together (FastAPI + SQLite + htmx)"
 readme = "README.md"
 license = "MIT"

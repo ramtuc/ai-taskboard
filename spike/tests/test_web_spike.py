@@ -1,5 +1,5 @@
 """web_spike の自動テスト (Starlette TestClient・サーバ起動不要)。
-実行: uv run --directory E:/prog/ai-taskboard/spike --with pytest python -m pytest -q tests
+実行: uv run --directory C:/path/to/ai-taskboard/spike --with pytest python -m pytest -q tests
 """
 from __future__ import annotations
 
