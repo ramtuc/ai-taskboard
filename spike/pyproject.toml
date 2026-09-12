@@ -1,0 +1,20 @@
+# AI タスクボード 技術検証スパイク (t-6a38efa9)
+# SPEC 完成前の「動くことの確認」専用。本実装は別ディレクトリで組み直す。
+[project]
+name = "ai-taskboard-spike"
+version = "0.0.1"
+description = "Spike: FastAPI+SQLite+HTMX page and an MCP stdio server (add_item/list_items)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.141.1",
+    "uvicorn==0.52.4",
+    "jinja2==3.1.6",
+    "python-multipart==0.0.32",
+    "mcp[cli]==2.2.0",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = ["pytest>=8", "httpx>=0.28"]   # httpx は fastapi.testclient が使う

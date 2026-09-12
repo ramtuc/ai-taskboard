@@ -1,0 +1,7 @@
+<ul id="item-list">
+  {% for it in items %}
+  <li>#{{ it.id }} {{ it.title }}<span class="badge {{ 'ai' if it.author.startswith('ai:') else '' }}">{{ it.author }}</span> <small>{{ it.created_at }}</small></li>
+  {% else %}
+  <li><em>(まだ項目がありません)</em></li>
+  {% endfor %}
+</ul>

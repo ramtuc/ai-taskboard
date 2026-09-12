@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ai-taskboard spike</title>
+  <script src="/static/htmx.min.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+    li { padding: .25rem 0; }
+    .badge { font-size: .75em; padding: 0 .4em; border-radius: .5em; background: #eee; margin-left: .5em; }
+    .badge.ai { background: #dbeafe; }
+  </style>
+</head>
+<body>
+  <h1>spike: items</h1>
+  <form hx-post="/items" hx-target="#item-list" hx-swap="outerHTML" hx-on::after-request="if(event.detail.successful) this.reset()">
+    <input name="title" placeholder="項目のタイトル" required autofocus>
+    <select name="author">
+      <option value="human">human</option>
+      <option value="ai:spike">ai:spike</option>
+    </select>
+    <button type="submit">追加</button>
+  </form>
+  {% include "_items.html" %}
+  <p><small>HTMX 2.0.10 (local bundle) / FastAPI / SQLite</small></p>
+</body>
+</html>
