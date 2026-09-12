@@ -8,12 +8,13 @@ import sqlite3
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from . import __version__, db, service
-from .models import Conflict, NotFound, ValidationError
+from .models import Conflict, Forbidden, NotFound, ValidationError
 from .deps import is_htmx
 from .render import local_date, local_dt, render_markdown, short_date
 
@@ -103,10 +104,12 @@ def create_app(db_path: str | Path | None = None, *, daily_backup: bool = True) 
     app.state.templates = build_templates()
     app.mount("/static", StaticFiles(directory=str(PACKAGE_DIR / "static")), name="static")
 
+    from .api import router as api_router
     from .routes import items, workspaces
 
     app.include_router(workspaces.router)
     app.include_router(items.router)
+    app.include_router(api_router)  # /api/v1（TASKBOARD_API_TOKEN 未設定なら 404 を返す）
 
     @app.get("/healthz")
     def healthz() -> dict:
@@ -123,6 +126,15 @@ def create_app(db_path: str | Path | None = None, *, daily_backup: bool = True) 
     @app.exception_handler(Conflict)
     async def _conflict(request: Request, exc: Conflict):
         return _error_response(request, 409, str(exc))
+
+    @app.exception_handler(Forbidden)
+    async def _forbidden(request: Request, exc: Forbidden):
+        return _error_response(request, 403, str(exc))
+
+    @app.exception_handler(RequestValidationError)
+    async def _request_validation(request: Request, exc: RequestValidationError):
+        # SPEC §4-4: 検証エラーは 400（FastAPI 既定の 422 ではなく）
+        return _error_response(request, 400, "; ".join(f"{'.'.join(str(x) for x in e.get('loc', ()))}: {e.get('msg')}" for e in exc.errors()))
 
     return app
 

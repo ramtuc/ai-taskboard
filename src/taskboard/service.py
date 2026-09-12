@@ -2,9 +2,9 @@
 
 - 書き込み系は必ず event を同じトランザクションで残す（呼び出し側が忘れられない）
 - author は呼び出し側が渡す（UI は 'human'、MCP は環境変数、REST はヘッダ）。source も同様
-- 例外: models.NotFound / models.ValidationError / models.Conflict（HTTP 404/400/409・MCP では ToolError に読み替える）
-- ai_policy の強制（hidden / read_only）は v0.3 で MCP／REST 側の入口が行う。ここでは
-  `visible_workspaces(conn, for_ai=True)` と `check_ai_writable()` を用意しておく
+- 例外: models.NotFound / models.ValidationError / models.Forbidden / models.Conflict（HTTP 404/400/403/409・MCP では ToolError）
+- ai_policy の強制（hidden＝存在しない・read_only＝書けない）は MCP／REST が `ai_get_workspace()` / `ai_get_item()` を
+  入口で呼ぶことで行う（UI は for_ai=False の関数を使うので全部見える）
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from typing import Any, Iterable
 
 from . import models as m
 from .db import now_utc
-from .models import Conflict, Event, Item, NotFound, Note, ValidationError, Workspace
+from .models import Conflict, Event, Forbidden, Item, NotFound, Note, ValidationError, Workspace
 
 DONE_COLUMN_LIMIT = 20  # かんばんの「完了」列に出す件数（SPEC §2-3）
 
@@ -115,11 +115,26 @@ def get_workspace_by_id(conn: sqlite3.Connection, workspace_id: int) -> Workspac
 
 
 def check_ai_writable(ws: Workspace) -> None:
-    """MCP／REST の書き込み系が呼ぶ（v0.3）。hidden は get_workspace(for_ai=True) で既に NotFound。"""
+    """MCP／REST の書き込み系が呼ぶ。hidden は「存在しない」、read_only は Forbidden（403 / ToolError）。"""
     if ws.ai_policy == "hidden":
         raise NotFound(f"workspace '{ws.slug}' not found")
     if ws.ai_policy == "read_only":
-        raise ValidationError(f"workspace '{ws.slug}' is read-only for AI")
+        raise Forbidden(f"workspace '{ws.slug}' is read-only for AI")
+
+
+# ---- AI 側（MCP／REST）の入口。hidden は存在しない扱い・read_only は書けない（SPEC §4-2 / §6-2） ----
+def ai_get_workspace(conn: sqlite3.Connection, slug: str, *, write: bool = False) -> Workspace:
+    ws = get_workspace(conn, slug, for_ai=True)
+    if write:
+        check_ai_writable(ws)
+    return ws
+
+
+def ai_get_item(conn: sqlite3.Connection, item_id: int, *, write: bool = False) -> Item:
+    item = get_item(conn, item_id, for_ai=True)
+    if write:
+        check_ai_writable(get_workspace_by_id(conn, item.workspace_id))
+    return item
 
 
 def create_workspace(

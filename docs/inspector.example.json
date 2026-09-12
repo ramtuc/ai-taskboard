@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "taskboard-demo": {
+      "command": "uv",
+      "args": ["run", "--directory", "E:/prog/ai-taskboard", "taskboard", "mcp"],
+      "env": {
+        "TASKBOARD_DB": "E:/prog/ai-taskboard/data/demo.sqlite3",
+        "TASKBOARD_AUTHOR": "ai:demo-assistant",
+        "TASKBOARD_BASE_URL": "http://127.0.0.1:8765",
+        "PYTHONUTF8": "1"
+      }
+    }
+  }
+}

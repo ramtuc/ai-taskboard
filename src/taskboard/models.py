@@ -54,6 +54,10 @@ class Conflict(RuntimeError):
     """同じ状態への移動・二重完了など（HTTP 409）。"""
 
 
+class Forbidden(ValidationError):
+    """ai_policy=read_only のワークスペースへ AI が書こうとした（HTTP 403・MCP では ToolError）。"""
+
+
 def validate_author(author: str) -> str:
     if not isinstance(author, str) or not AUTHOR_RE.match(author):
         raise ValidationError("author must be 'human' or 'ai:<name>' (name: ^[a-z0-9][a-z0-9._-]{0,39}$)")
@@ -63,7 +67,9 @@ def validate_author(author: str) -> str:
 def validate_owner(owner: str | None) -> str | None:
     if owner is None or owner == "":
         return None
-    return validate_author(owner)
+    if not isinstance(owner, str) or not AUTHOR_RE.match(owner):
+        raise ValidationError("owner must be 'human' or 'ai:<name>' (or empty for unassigned)")
+    return owner
 
 
 def validate_slug(slug: str) -> str:

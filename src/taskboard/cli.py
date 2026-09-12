@@ -5,6 +5,7 @@
   uv run taskboard seed --demo [--db PATH]        # 既定は data/demo.sqlite3（通常 DB とは別ファイル）
   uv run taskboard import FILE.json|FILE.csv [--dry-run] [--author human] [--db PATH]
   uv run taskboard backup [--db PATH] [--keep 30]
+  uv run taskboard mcp                             # MCP サーバー（stdio）。Claude Code が子プロセスとして起動する
 
 --db を省略すると環境変数 TASKBOARD_DB、無ければ data/taskboard.sqlite3。
 ホストは 127.0.0.1 固定（LAN 公開は v1 スコープ外。オプションを用意しない）。
@@ -51,6 +52,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--dry-run", action="store_true", help="書き込まずに結果だけ表示")
     s.add_argument("--author", default="human", help="created_by が無い項目の作成者（既定 human）")
     _db_arg(s)
+
+    sub.add_parser("mcp", help="MCP サーバー（stdio）を起動。TASKBOARD_AUTHOR / TASKBOARD_DB を環境変数で")
 
     s = sub.add_parser("backup", help="Connection.backup() で data/backups/ へ")
     s.add_argument("--keep", type=int, default=db.BACKUP_KEEP, help="残す世代数（既定 30）")
@@ -124,6 +127,13 @@ def cmd_import(args: argparse.Namespace) -> int:
     return 0 if not report.errors else 1
 
 
+def cmd_mcp(args: argparse.Namespace) -> int:
+    from .mcp_server import main as mcp_main
+
+    mcp_main()  # stdout はプロトコル。ここでは何も print しない
+    return 0
+
+
 def cmd_backup(args: argparse.Namespace) -> int:
     path = args.db or db.default_db_path()
     if not Path(path).exists():
@@ -147,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:
         "seed": cmd_seed,
         "import": cmd_import,
         "backup": cmd_backup,
+        "mcp": cmd_mcp,
     }[args.cmd]
     try:
         return handler(args)

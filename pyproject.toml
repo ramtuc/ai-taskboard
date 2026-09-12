@@ -1,6 +1,6 @@
 [project]
 name = "ai-taskboard"
-version = "0.2.0"
+version = "0.3.0"
 description = "Local web board where humans and AI manage candidates and leftovers together (FastAPI + SQLite + htmx)"
 readme = "README.md"
 license = "MIT"
@@ -11,6 +11,7 @@ dependencies = [
     "jinja2==3.1.6",
     "python-multipart==0.0.32",
     "markdown-it-py==4.2.0",
+    "mcp[cli]==2.2.0",
 ]
 
 [project.scripts]
