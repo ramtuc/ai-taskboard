@@ -2,6 +2,13 @@
 
 このプロジェクトの変更履歴。書式は [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) に、版番号は [Semantic Versioning](https://semver.org/lang/ja/) に従う。
 
+## [Unreleased]
+
+### Added
+- `scripts/`（Windows 専用）: 起動の手間を減らす補助スクリプト。`serve.cmd`（ダブルクリック起動。ポート使用中なら PID を表示して終わる）・`serve-hidden.vbs`（コンソールを出さずに起動。ログは `data/logs/serve.log`）・`stop.cmd`（ポートを LISTEN している PID だけを `taskkill /PID`）・`install-autostart.ps1`／`uninstall-autostart.ps1`（ログオン時自動起動のタスク スケジューラ登録／解除。ドライラン表示 → 確認 → 登録。登録は利用者が実行）
+- README「常駐させる」節、SPEC §6-4 に v1.1 の 1 行
+- `.gitattributes`: `*.cmd` / `*.vbs` / `*.ps1` を `eol=crlf` に固定
+
 ## [1.0.0] - 2026-09-12
 
 公開版。0.3.0 から機能の追加・変更はない。

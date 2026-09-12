@@ -515,6 +515,7 @@ Claude Code 側の権限: ツール名は `mcp__taskboard__add_item` のよう�
 
 - 手動起動が既定（`uv run taskboard serve`）。Windows のスタートアップ登録・サービス化は**やらない**（v1）。★必要なら §10 で
 - 停止は Ctrl+C。SQLite は WAL なので途中停止でも壊れない前提（sqlite.org/wal.html）
+- v1.1: 補助スクリプトを追加（`scripts/`: ダブルクリック起動 `serve.cmd`・非表示起動 `serve-hidden.vbs`・停止 `stop.cmd`・ログオン時自動起動の登録／解除 `install-autostart.ps1`／`uninstall-autostart.ps1`）。**タスク スケジューラへの登録は利用者が実行する**（スクリプトはドライラン表示と確認プロンプトまで。自動では登録しない）。手順は README「常駐させる」
 
 ---
 

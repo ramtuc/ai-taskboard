@@ -37,6 +37,7 @@ uv run taskboard serve       # http://127.0.0.1:8765/  停止は Ctrl+C
 - `init-db` は省略できる（`serve` の起動時にも同じ初期化が走る）
 - 初期ワークスペースは **ブログ `/w/blog`（read_write）・仕事 `/w/work`（hidden）・開発 `/w/dev`（read_write）**。名前・`ai_policy` は `/w/{slug}/settings` で変えられる
 - まず触ってみるなら [ダミーデータ](#ダミーデータ架空) で起動する
+- 毎回コマンドを打つのが面倒なら [常駐させる](#常駐させる起動の手間を減らす)（ダブルクリック起動・非表示起動・ログオン時自動起動）
 
 ### CLI
 
@@ -51,6 +52,89 @@ uv run taskboard serve       # http://127.0.0.1:8765/  停止は Ctrl+C
 | `uv run taskboard --version` | 版を表示 |
 
 `--db` を省略すると環境変数 `TASKBOARD_DB`、それも無ければ `data/taskboard.sqlite3`。ポートは `TASKBOARD_PORT` でも指定できる。
+
+## 常駐させる（起動の手間を減らす）
+
+`scripts/` に Windows 用の補助スクリプトがある。どれも `uv run taskboard serve` を呼ぶだけの薄い皮で、サーバー本体の設定は変えない。**タスク スケジューラへの登録は、スクリプトを実行する本人が行う**（ドライラン表示 → 確認 → 登録。スクリプトが勝手に登録することはない）。macOS／Linux では使えない。
+
+| やりたいこと | 方法 |
+|:--|:--|
+| 手動で起動（開発時） | `uv run taskboard serve`。停止は Ctrl+C |
+| ダブルクリックで起動 | `scripts\serve.cmd`。コンソールが開く。閉じるか Ctrl+C で停止 |
+| コンソールを出さずに起動 | `scripts\serve-hidden.vbs` をダブルクリック。ログは `data\logs\serve.log` |
+| ログオン時に自動起動 | `scripts\install-autostart.ps1`（解除は `uninstall-autostart.ps1`） |
+| 停止 | `scripts\stop.cmd`。**ポートを LISTEN している PID だけ**を止める |
+| 動作確認 | <http://127.0.0.1:8765/healthz> が `{"ok":true,"db":...,"version":...}` を返せば動いている |
+
+### ダブルクリックで起動: `serve.cmd`
+
+`cd` してから `uv run taskboard serve` を実行するだけ。引数はそのまま `taskboard serve` に渡る（`serve.cmd --port 8770` など）。
+
+- ポート（既定 8765、`--port` か `TASKBOARD_PORT`）を既に何かが LISTEN していれば「already running on port 8765 - PID …」と表示して終わる（二重起動しない）
+- `uv` が PATH に無ければその旨を表示して終わる
+- 終わりに `pause` するので、エラーがあっても窓が消えない。Ctrl+C で止めたときは cmd の「バッチ ジョブを終了しますか (Y/N)?」に Y
+
+### コンソールを出さずに起動: `serve-hidden.vbs`
+
+`wscript` が `serve.cmd` を非表示ウィンドウで動かす。uvicorn の出力と起動・終了の行は **`data\logs\serve.log`** に追記される（`data/` は .gitignore 済み）。止めるのは `stop.cmd`。
+
+- 引数（省略可）: `/uv:"C:\path\to\uv.exe"`（PATH に頼らず uv を固定。自動起動の登録スクリプトが渡す）、`/port:8765`
+- 環境変数 `TASKBOARD_LOG` を先に設定しておけばログの場所を変えられる
+- 起動したかどうかは <http://127.0.0.1:8765/> を開くか、`serve.log` の末尾を見る（ダイアログは出さない）
+- `wscript.exe` はサーバーが生きている間は残る（サーバーの終了コードをタスク スケジューラに返すため）。タスク マネージャーに `wscript.exe` が 1 つ居るのは正常
+
+### ログオン時に自動起動: `install-autostart.ps1` ／ `uninstall-autostart.ps1`
+
+PowerShell 5.1 で動く。`.ps1` の実行が既定でブロックされている場合は `powershell -ExecutionPolicy Bypass -File .\scripts\install-autostart.ps1` のように起動する（または `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`）。
+
+```powershell
+cd C:\path\to\ai-taskboard
+.\scripts\install-autostart.ps1 -WhatIf     # ドライラン。登録する内容を表示するだけで何もしない
+.\scripts\install-autostart.ps1             # 同じ表示のあと確認プロンプト。Y で登録（-Confirm:$false で省略）
+
+# 登録できたか・最後にどう動いたか
+Get-ScheduledTask -TaskName ai-taskboard | Get-ScheduledTaskInfo
+# 次のログオンを待たずに今すぐ試す
+Start-ScheduledTask -TaskName ai-taskboard
+Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8765/healthz
+
+.\scripts\uninstall-autostart.ps1           # 解除（同じく表示 → 確認）。動いているサーバーは止めない → stop.cmd
+```
+
+登録される内容（`-WhatIf` で全部表示される）:
+
+| 項目 | 値 |
+|:--|:--|
+| 実行ユーザー／トリガー | 自分（`New-ScheduledTaskTrigger -AtLogOn -User`）。自分のログオン時に、自分の権限で。パスワードは保存しない（`LogonType Interactive`・`RunLevel Limited`） |
+| 実行ファイル | `C:\WINDOWS\System32\wscript.exe //B //Nologo "<repo>\scripts\serve-hidden.vbs" /uv:"<uv の絶対パス>" /port:8765`。作業ディレクトリは repo のルート |
+| uv | `(Get-Command uv).Source` の絶対パスを埋め込む（ログオン直後の PATH に依存しない） |
+| 実行時間の上限 | `ExecutionTimeLimit PT0S`（無制限。既定の 3 日で止められない） |
+| 失敗時 | 1 分後に再試行、3 回まで（`RestartCount 3` / `RestartInterval PT1M`） |
+| 多重起動 | `IgnoreNew`（起動中なら新しいインスタンスを無視）。`serve.cmd` 側でもポート使用中なら起動しない |
+| 電源 | バッテリー駆動でも起動し、バッテリーに切り替わっても止めない。`StartWhenAvailable` |
+| 引数 | `-TaskName`（既定 `ai-taskboard`）・`-Port`（既定 8765） |
+
+`stop.cmd` で止めたときは、`serve.cmd` が終了コード 0 で終わるようにしてある（`%TEMP%\ai-taskboard-stop-<port>.flag` の受け渡し）。タスク スケジューラは「正常終了」と見なすので、**1 分後に勝手に復活しない**。もう一度動かすなら `Start-ScheduledTask -TaskName ai-taskboard` か `serve-hidden.vbs` をダブルクリック。サーバーが自分で落ちた（終了コード ≠ 0）ときだけ再試行が働く。
+
+### 停止: `stop.cmd`
+
+`netstat -ano` でポート（既定 8765、`--port N` か `TASKBOARD_PORT`）を **LISTENING** している PID を 1 つ探し、その PID だけを `taskkill /PID <pid> /F` で止める。イメージ名（`python.exe`）ではまとめて殺さないので、他の Python は巻き込まない。uvicorn のシャットダウン処理は走らないが、DB は SQLite の WAL モードなので途中で切れても壊れない前提（[SPEC §6-4](SPEC.md)）。親の `uv`／`cmd`／`wscript` はサーバーが消えると自分で終わる。
+
+### ポートが競合したとき
+
+- `serve.cmd` が「already running on port 8765 - PID N」と言う → 既にこのアプリが動いているなら <http://127.0.0.1:8765/> を開けばよい。別のアプリなら `tasklist /fi "PID eq N"` で正体を確認する
+- 別のポートで動かす: `serve.cmd --port 8770`、または環境変数 `TASKBOARD_PORT=8770`。自動起動は `install-autostart.ps1 -Port 8770`（`stop.cmd --port 8770` で止める）
+- MCP は stdio（ポートを使わない）なのでポートを変えても Claude Code 側の設定は変わらない。REST と Web UI の URL だけ変わる
+
+### ログの場所
+
+| 起動方法 | 出力先 |
+|:--|:--|
+| `uv run taskboard serve`／`serve.cmd` | そのコンソール |
+| `serve-hidden.vbs`／ログオン時自動起動 | `data\logs\serve.log`（追記。ローテーションはしない。大きくなったらサーバーを止めてから消す） |
+
+手で起動するときにファイルへ落とすなら、cmd から `uv run taskboard serve >> data\logs\serve.log 2>&1`。PowerShell 5.1 では stderr のリダイレクトが ErrorRecord に包まれるので `cmd /c "uv run taskboard serve >> data\logs\serve.log 2>&1"` の形にする。`serve.cmd` は環境変数 `TASKBOARD_LOG` にファイル名があれば同じことをする（フォルダは作る）。
+
 
 ## 画面
 
@@ -276,6 +360,7 @@ uv run pytest -q          # 46 passed: DDL・service・Web UI（TestClient）・
 - ドラッグ＆ドロップでの列移動はない（`<select>` で移動）
 - MCP は stdio のみ（Streamable HTTP での常時公開はしない）。ホストが子プロセスとして起動する運用が前提
 - macOS／Linux は未検証
+- `scripts/` の補助スクリプト（ダブルクリック起動・非表示起動・停止・ログオン時自動起動）は Windows 専用（cmd／WSH／タスク スケジューラ）
 
 ## ライセンス
 
