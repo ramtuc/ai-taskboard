@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import sqlite3
 from contextlib import asynccontextmanager
@@ -40,6 +41,21 @@ def ensure_initial_workspaces(conn: sqlite3.Connection) -> list[str]:
     return created
 
 
+def _run_daily_backup(path: Path) -> None:
+    try:
+        dest = db.maybe_daily_backup(path)
+        if dest:
+            log.info("daily backup written: %s", dest)
+    except Exception:  # バックアップ失敗でサーバーを止めない
+        log.exception("daily backup failed")
+
+
+async def _backup_loop(path: Path, interval_seconds: float = 3600) -> None:
+    while True:
+        await asyncio.sleep(interval_seconds)
+        await asyncio.to_thread(_run_daily_backup, path)
+
+
 def build_templates() -> Jinja2Templates:
     templates = Jinja2Templates(directory=str(PACKAGE_DIR / "templates"))  # autoescape は既定で有効
     templates.env.filters["markdown"] = render_markdown
@@ -72,14 +88,15 @@ def create_app(db_path: str | Path | None = None, *, daily_backup: bool = True) 
                 log.info("created initial workspaces: %s", created)
         finally:
             conn.close()
+        task = None
         if daily_backup:
-            try:
-                dest = db.maybe_daily_backup(path)
-                if dest:
-                    log.info("daily backup written: %s", dest)
-            except Exception:  # バックアップ失敗で起動を止めない
-                log.exception("daily backup failed")
-        yield
+            _run_daily_backup(path)  # 起動時に 1 回
+            task = asyncio.create_task(_backup_loop(path))  # 以後は 1 時間ごとに「24 時間経っていれば」実行（SPEC §6-3 の簡易スケジューラ）
+        try:
+            yield
+        finally:
+            if task:
+                task.cancel()
 
     app = FastAPI(title="ai-taskboard", version=__version__, lifespan=lifespan, docs_url="/docs")
     app.state.db_path = path
