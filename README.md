@@ -60,11 +60,23 @@ uv run taskboard serve       # http://127.0.0.1:8765/  停止は Ctrl+C
 | やりたいこと | 方法 |
 |:--|:--|
 | 手動で起動（開発時） | `uv run taskboard serve`。停止は Ctrl+C |
+| ダブルクリックで起動してブラウザで開く | `launch.cmd`（リポジトリ直下）。起動 → `/healthz` を待つ → 既定ブラウザで開く。起動済みなら開くだけ |
 | ダブルクリックで起動 | `scripts\serve.cmd`。コンソールが開く。閉じるか Ctrl+C で停止 |
 | コンソールを出さずに起動 | `scripts\serve-hidden.vbs` をダブルクリック。ログは `data\logs\serve.log` |
 | ログオン時に自動起動 | `scripts\install-autostart.ps1`（解除は `uninstall-autostart.ps1`） |
 | 停止 | `scripts\stop.cmd`。**ポートを LISTEN している PID だけ**を止める |
 | 動作確認 | <http://127.0.0.1:8765/healthz> が `{"ok":true,"db":...,"version":...}` を返せば動いている |
+
+### 起動してブラウザで開く: `launch.cmd`
+
+リポジトリ直下の `launch.cmd` をダブルクリックすると、サーバー起動 → <http://127.0.0.1:8765/healthz> が返るまで待つ（最大 30 秒）→ 既定ブラウザで <http://127.0.0.1:8765/> を開く、まで一度に済む。実体は `scripts\launch.cmd`（直下のファイルは 1 行の呼び出しだけ）。
+
+- 既にポートを LISTEN していれば起動せず、ブラウザを開くだけ（二重起動しない。判定は `serve.cmd` と同じ netstat）
+- 起動は `serve-hidden.vbs` 経由。コンソールは残らず、ログは `data\logs\serve.log`。成功すると `launch.cmd` の窓は自動で閉じる
+- 止めるのは `stop.cmd`（`launch.cmd` の窓を閉じてもサーバーは止まらない）
+- 30 秒待っても応答が無いときだけメッセージを出して `pause` する。`uv` が PATH に無いか、起動時のエラー。`scripts\serve.cmd` を直接実行してコンソールでエラーを見るか、`serve.log` の末尾を読む
+- ポートは `launch.cmd --port 8770` か環境変数 `TASKBOARD_PORT`（`serve.cmd` と同じ優先順）。失敗時の `pause` は `TASKBOARD_NOPAUSE` で抑止
+- デスクトップから使う: エクスプローラで `launch.cmd` を右クリック →（Windows 11 は「その他のオプションを確認」→）「ショートカットの作成」→ できたショートカットをデスクトップへ移す。または右クリック →「送る」→「デスクトップ (ショートカットを作成)」。`%~dp0` で自分の場所を見るので、ショートカットの「作業フォルダー」は何でもよい
 
 ### ダブルクリックで起動: `serve.cmd`
 

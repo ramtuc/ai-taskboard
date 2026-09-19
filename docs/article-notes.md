@@ -155,6 +155,8 @@
 
 追加の小ネタ（`spike/ENV.md §3`）: Claude Code は MCP サーバーの環境に `CLAUDE_PROJECT_DIR` と `PYTHONIOENCODING=utf-8:surrogateescape` を入れて起動する／同一セッション内は同じ子プロセスが生き続ける（`list_items` が直前の `add_item` を見る）／local scope の登録は他のフォルダで `claude mcp list` しても出ない（意図通り）。
 
+「起動の手間を減らす」節の材料（①の末尾か番外）: `launch.cmd`（直下）→ `scripts/launch.cmd` が `serve-hidden.vbs` を待たずに起動し、PowerShell 1 プロセスで `/healthz` を実時計の締切 30 秒まで待って既定ブラウザを開く。小ネタは **Windows では 127.0.0.1 の閉じたポートへの接続拒否に約 2 秒かかる**（SYN 再送）ので、「30 回 × 1 秒」で数えると 90 秒になる → 締切は時計で測る（`scripts/launch.cmd` のコメントに理由あり。実測は 33 s で打ち切り）。
+
 ---
 
 ## 4. 記事に出してはいけないもの（SPEC §8-3）
